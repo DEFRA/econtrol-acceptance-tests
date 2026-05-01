@@ -6,14 +6,7 @@ const TABLE_HEADER_ALIASES = {
 }
 
 /**
- * Search Permit page — eControl / GOV.UK prototype.
- *
- * Do **not** use `await $$('table…')` + `Promise.all(headers.map(…))` or
- * `for…of` on raw WDIO element lists: they are often non-iterable. Use
- * `elementArrayToList`, scope rows/headers via `this.resultsTable.$$`, and
- * index loops for `getText()`.
- *
- * Default export is a singleton so steps share `this._lastSearched` in a scenario.
+ * Search Permit page 
  */
 class SearchPermitPage extends Page {
   constructor() {
@@ -26,14 +19,25 @@ class SearchPermitPage extends Page {
     const start = process.env.WDIO_SEARCH_PERMIT_START_PATH ?? '/'
     return super.open(start)
   }
-  
-  
+
+  async openEmptySearch() {
+    const path =
+      process.env.WDIO_SEARCH_PERMIT_EMPTY_PATH ??
+      '/beta-28-05-26/single-search-results/search-results?empty=1'
+
+    return super.open(path)
+  }
+
+  // -------------------------
+  // Selectors
+  // -------------------------
+
   get password() {
     return $('#password')
   }
 
   get continue() {
-    return $("//button[@type='submit']")
+    return $("//button[@type='sumit']")
   }
 
   get permitNumberInput() {
@@ -41,7 +45,7 @@ class SearchPermitPage extends Page {
   }
 
   get searchButton() {
-    return $('button[name=\'search\']')
+    return $("button[name='search']")
   }
 
   get resultsMessage() {
@@ -52,6 +56,9 @@ class SearchPermitPage extends Page {
     return $('table.govuk-table, table')
   }
 
+  get resultRows() {
+    return this.resultsTable.$$('tbody tr')
+  }
 
   get noMatchMessage() {
     return $('*=No permits found')
@@ -61,34 +68,67 @@ class SearchPermitPage extends Page {
     return $('#permitReferences-error')
   }
 
-  /** Notification title when search returns no permits (invalid / unknown numbers). */
   get permitNotFoundBanner() {
     return $('#govuk-notification-banner-title-permit-not-found')
   }
 
-  /** Alias for {@link permitNotFoundBanner} (matches common naming in tests). */
   get errorMessage() {
     return this.permitNotFoundBanner
   }
 
-  async openEmptySearch() {
-    const path =
-      process.env.WDIO_SEARCH_PERMIT_EMPTY_PATH ??
-      '/beta-28-05-26/single-search-results/search-results?empty=1'
-    return super.open(path)
+  get changeSearch() {
+    return $("//a[contains(text(), 'Change your search')]")
   }
+
+  // -------------------------
+  // State getters
+  // -------------------------
+
+  get expectedResults() {
+    return this._expectedResults
+  }
+
+  get lastSearched() {
+    return this._lastSearched
+  }
+
+  get lastSearchedAsList() {
+    return String(this._lastSearched ?? '')
+      .split(/\r?\n/)
+      .map((value) => value.trim())
+      .filter(Boolean)
+  }
+
+  // -------------------------
+  // Actions
+  // -------------------------
 
   async enterPassword(password) {
     const exists = await this.password.isExisting()
     if (!exists) return
+
     await this.password.setValue(password)
   }
 
   async clickContinue() {
     const exists = await this.continue.isExisting()
     if (!exists) return
+
     await this.continue.waitForClickable()
     await this.continue.click()
+  }
+
+  async enterPermits(permitNumbers) {
+    const list = (
+      Array.isArray(permitNumbers) ? permitNumbers : [permitNumbers]
+    )
+      .map((number) => (number ?? '').toString().trim())
+      .filter(Boolean)
+
+    this._lastSearched = list.join('\n')
+
+    await this.permitNumberInput.waitForDisplayed({ timeout: 10000 })
+    await this.permitNumberInput.setValue(this._lastSearched)
   }
 
   async clickSearch() {
@@ -101,17 +141,6 @@ class SearchPermitPage extends Page {
     await this.clickSearch()
   }
 
-  async enterPermits(permitNumbers) {
-    const list = (Array.isArray(permitNumbers) ? permitNumbers : [permitNumbers])
-      .map((n) => (n ?? '').toString().trim())
-      .filter(Boolean)
-
-    this._lastSearched = list.join('\n')
-
-    await this.permitNumberInput.waitForDisplayed({ timeout: 10000 })
-    await this.permitNumberInput.setValue(list.join('\n'))
-  }
-
   async searchForExpectedPermits(expectedResults) {
     this._expectedResults = expectedResults
 
@@ -121,28 +150,17 @@ class SearchPermitPage extends Page {
       )
       .filter(Boolean)
 
-    return this.search(permitNumbers)
+    await this.search(permitNumbers)
   }
 
-  get expectedResults() {
-    return this._expectedResults
+  async clickChangeSearch() {
+    await this.changeSearch.waitForClickable({ timeout: 10000 })
+    await this.changeSearch.click()
   }
 
-  get lastSearched() {
-    return this._lastSearched
-  }
-
-  get resultRows() {
-    return this.resultsTable.$$('tbody tr')
-  }
-
-  get lastSearchedAsList() {
-    const raw = this._lastSearched ?? ''
-    return String(raw)
-      .split(/\r?\n/)
-      .map((s) => s.trim())
-      .filter(Boolean)
-  }
+  // -------------------------
+  // Results message helpers
+  // -------------------------
 
   async getResultsMessageText() {
     await this.resultsMessage.waitForDisplayed({ timeout: 10000 })
@@ -152,83 +170,89 @@ class SearchPermitPage extends Page {
   async getResultsCountFromMessage() {
     const text = await this.getResultsMessageText()
     const match = text.match(/(\d+)/)
+
     return match ? parseInt(match[1], 10) : 0
   }
 
-  
+  async getDisplayedResultsCount() {
+    const rows = await this.elementArrayToList(this.resultRows)
+    return rows.length
+  }
 
+  // -------------------------
+  // Table helpers
+  // -------------------------
 
-
-  /**
-   * WDIO element collections are often array-like but have a broken or missing
-   * `Symbol.iterator` — never spread/`for...of` them. Copy by numeric index only.
-   */
   async elementArrayToList(maybe) {
     const resolved = await maybe
-    if (resolved == null) {
-      return []
-    }
-    if (Array.isArray(resolved)) {
-      return [...resolved]
-    }
-    const len = Number(resolved.length)
-    if (!Number.isFinite(len) || len <= 0) {
-      return []
-    }
-    const out = []
-    for (let i = 0; i < len; i++) {
-      const el = resolved[i]
-      if (el != null) {
-        out.push(el)
+
+    if (resolved == null) return []
+    if (Array.isArray(resolved)) return [...resolved]
+
+    const length = Number(resolved.length)
+    if (!Number.isFinite(length) || length <= 0) return []
+
+    const items = []
+
+    for (let i = 0; i < length; i++) {
+      if (resolved[i] != null) {
+        items.push(resolved[i])
       }
     }
-    return out
+
+    return items
   }
 
   async getResultsTableHeaders() {
     const table = this.resultsTable
     await table.waitForDisplayed({ timeout: 10000 })
-    const headerEls = await this.elementArrayToList(table.$$('thead th'))
-    const texts = []
-    for (let i = 0; i < headerEls.length; i++) {
-      texts.push(await headerEls[i].getText())
+
+    const headerElements = await this.elementArrayToList(table.$$('thead th'))
+    const headers = []
+
+    for (let i = 0; i < headerElements.length; i++) {
+      headers.push(await headerElements[i].getText())
     }
-    return texts.map((t) => t.replace(/\s+/g, ' ').trim())
+
+    return headers.map((header) => header.replace(/\s+/g, ' ').trim())
   }
 
   async getColumnValues(columnIndex) {
     const rows = await this.elementArrayToList(this.resultRows)
     const values = []
-    for (const row of rows) {
-      const cells = await this.elementArrayToList(row.$$('td'))
+
+    for (let i = 0; i < rows.length; i++) {
+      const cells = await this.elementArrayToList(rows[i].$$('td'))
+
       if (cells[columnIndex]) {
         values.push(await cells[columnIndex].getText())
       }
     }
+
     return values
   }
-  /**
-   * Copy values from DOM header names onto shorter / stable alias keys so
-   * assertions and {@link getColumnValues} stay aligned with Gherkin.
-   */
-   applyTableHeaderAliases(rowObj) {
+
+  applyTableHeaderAliases(rowObj) {
     if (rowObj == null || typeof rowObj !== 'object') {
       return rowObj
     }
+
     for (const [alias, domHeaders] of Object.entries(TABLE_HEADER_ALIASES)) {
-      if (!Array.isArray(domHeaders)) {
-        continue
-      }
+      if (!Array.isArray(domHeaders)) continue
+
       const existing = (rowObj[alias] ?? '').toString().trim()
       if (existing !== '') continue
-      for (const h of domHeaders) {
-        const v = (rowObj[h] ?? '').toString().trim()
-        if (v !== '') {
-          rowObj[alias] = v
+
+      for (const header of domHeaders) {
+        const value = (rowObj[header] ?? '').toString().trim()
+
+        if (value !== '') {
+          rowObj[alias] = value
           break
         }
       }
     }
+
     return rowObj
   }
 
@@ -237,102 +261,96 @@ class SearchPermitPage extends Page {
     const rows = await this.elementArrayToList(this.resultRows)
     const results = []
 
-    for (const row of rows) {
-      const cells = await this.elementArrayToList(row.$$('td'))
+    for (let r = 0; r < rows.length; r++) {
+      const cells = await this.elementArrayToList(rows[r].$$('td'))
       const cellTexts = []
+
       for (let c = 0; c < cells.length; c++) {
         cellTexts.push(await cells[c].getText())
       }
+
       const rowObj = {}
-      headers.forEach((header, i) => {
-        rowObj[header] = (cellTexts[i] ?? '').toString().trim()
+
+      headers.forEach((header, index) => {
+        rowObj[header] = (cellTexts[index] ?? '').toString().trim()
       })
+
       this.applyTableHeaderAliases(rowObj)
       results.push(rowObj)
     }
 
     return results
   }
-  async getDisplayedResultsCount() {
-    const rows = await this.elementArrayToList(this.resultRows)
-    return rows.length
-  }
+
+  // -------------------------
+  // Empty / error state helpers
+  // -------------------------
 
   async isAnyEmptyStateVisible() {
     const sources = [
       this.permitFieldError,
       this.permitNotFoundBanner,
-      this.noMatchMessage,
-      this.validationError
+      this.noMatchMessage
     ]
+
     for (const el of sources) {
       if (await this.safeIsDisplayed(el)) {
         return true
       }
     }
+
     return false
   }
 
-  /**
-   * True if `substring` appears in either the empty-search field error or the
-   * no-permits notification title — **does not** read the results table.
-   */
   async searchOutcomeMessageIncludes(substring) {
     const needle = substring.toLowerCase().trim()
     if (!needle) return false
 
-    const field = this.permitFieldError
-    if (await this.safeIsDisplayed(field)) {
-      try {
-        const t = (await field.getText()).toLowerCase()
-        if (t.includes(needle)) return true
-      } catch {
-        /* stale */
+    const sources = [this.permitFieldError, this.permitNotFoundBanner]
+
+    for (const el of sources) {
+      if (await this.safeIsDisplayed(el)) {
+        try {
+          const text = (await el.getText()).toLowerCase()
+          if (text.includes(needle)) return true
+        } catch {
+          // Ignore stale element errors
+        }
       }
     }
-    const banner = this.permitNotFoundBanner
-    if (await this.safeIsDisplayed(banner)) {
-      try {
-        const t = (await banner.getText()).toLowerCase()
-        if (t.includes(needle)) return true
-      } catch {
-        /* stale */
-      }
-    }
+
     return false
   }
 
-    async getVisibleStatusText() {
+  async getVisibleStatusText() {
     const ordered = [
       this.permitFieldError,
       this.permitNotFoundBanner,
-      this.validationError,
       this.noMatchMessage,
       this.resultsMessage
-    ].filter((el) => el != null && typeof el.isDisplayed === 'function')
+    ]
 
     for (const el of ordered) {
       if (await this.safeIsDisplayed(el)) {
         return el.getText()
       }
     }
+
     return ''
   }
-
 
   async safeIsDisplayed(el) {
     if (el == null || typeof el.isDisplayed !== 'function') {
       return false
     }
+
     try {
       return await el.isDisplayed()
     } catch {
       return false
     }
   }
-
 }
-
 
 const searchPermitPage = new SearchPermitPage()
 

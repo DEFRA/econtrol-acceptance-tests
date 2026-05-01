@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "wdio run wdio.conf.js",
-    "test:smoke": "wdio run wdio.conf.js --cucumberOpts.tagExpression='@smoke'",
+    "test:smoke": "wdio run wdio.conf.js --cucumberOpts.tagExpression='@CTS-585'",
     "test:headless": "HEADLESS=true wdio run wdio.conf.js",
     "report:generate": "allure generate ./allure-results --clean -o ./allure-report",
     "report:open": "allure open ./allure-report",

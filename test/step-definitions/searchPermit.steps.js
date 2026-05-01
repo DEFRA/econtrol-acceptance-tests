@@ -2,9 +2,8 @@ import { Given, When, Then } from '@wdio/cucumber-framework'
 import { browser, expect } from '@wdio/globals'
 import searchPermitPage from '../page-objects/searchPermit.page'
 
-
 Given(/^I am on the Search Permit page$/, async () => {
-  await searchPermitPage.open();
+  await searchPermitPage.open()
 })
 
 Given(/^I can see the title "([^"]*)"$/, async (expectedTitle) => {
@@ -16,12 +15,12 @@ Given(/^I enter password "([^"]*)"$/, async (password) => {
   await searchPermitPage.enterPassword(password)
 })
 
-Given(/click on continue/, async()=>{
-    await searchPermitPage.clickContinue();
+Given(/click on continue/, async () => {
+  await searchPermitPage.clickContinue()
 })
 
-Given(/I click on empty search permit/, async()=>{
-   await searchPermitPage.openEmptySearch();
+Given(/I click on empty search permit/, async () => {
+  await searchPermitPage.openEmptySearch()
 })
 
 When(
@@ -41,6 +40,10 @@ When(/^I search using the following permit numbers:$/, async (dataTable) => {
 When(/^I search for the following permits:$/, async (dataTable) => {
   const expectedResults = dataTable.hashes()
   await searchPermitPage.searchForExpectedPermits(expectedResults)
+})
+
+When(/I click on Change Search/, async () => {
+  await searchPermitPage.clickChangeSearch()
 })
 
 Then(
@@ -113,21 +116,18 @@ Then(
   }
 )
 
-Then(
-  /^I should see a no matching permits or validation message$/,
-  async () => {
-    await browser.waitUntil(
-      async () => searchPermitPage.isAnyEmptyStateVisible(),
-      {
-        timeout: 10000,
-        timeoutMsg:
-          'Expected either a "no matching permits" message or a validation error to be visible.'
-      }
-    )
-  }
-)
+Then(/^I should see a no matching permits or validation message$/, async () => {
+  await browser.waitUntil(
+    async () => searchPermitPage.isAnyEmptyStateVisible(),
+    {
+      timeout: 10000,
+      timeoutMsg:
+        'Expected either a "no matching permits" message or a validation error to be visible.'
+    }
+  )
+})
 
-Then(/^I should see the message "([^"]*)"$/, async (expectedMessage) => {
+Then(/^I should see the message "([^"]*)" for invalid$/, async (expectedMessage) => {
   await browser.waitUntil(
     async () => {
       const text = await searchPermitPage.getVisibleStatusText()
@@ -140,7 +140,7 @@ Then(/^I should see the message "([^"]*)"$/, async (expectedMessage) => {
   )
 })
 
-Then(/^I should see the following permit results:$/, async (dataTable) => {
+Then(/^I should see the following permit results for valid:$/, async (dataTable) => {
   const expectedRows = dataTable.hashes()
   const actualRows = await searchPermitPage.getResultsAsObjects()
 
@@ -187,6 +187,12 @@ Then(/^every result should have the following values:$/, async (dataTable) => {
       }
     }
   })
+})
+
+Then('the search input field should be visible', async () => {
+  const input = await searchPermitPage.permitNumberInput
+  await input.waitForDisplayed()
+  await input.waitForEnabled()
 })
 
 Then(/^the displayed results should match the expected permits$/, async () => {
