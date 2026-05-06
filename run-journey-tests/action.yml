@@ -12,7 +12,7 @@ runs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: .nvmrc
+        node-version-file: .nvmrc
         cache: npm
 
     - name: Setup the tests
@@ -21,13 +21,12 @@ runs:
 
     - name: Run the tests
       shell: bash
-      run: |
-        npm run test:github
+      run: npm run test:github
 
     - name: Generate Allure report
       if: always()
       shell: bash
-      run: npm run report
+      run: npm run report:generate
 
     - name: Upload allure report
       if: always()
