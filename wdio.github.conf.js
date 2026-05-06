@@ -21,7 +21,7 @@ export const config = {
   port: process.env.CHROMEDRIVER_PORT || 4444,
 
   // Tests to run
-  specs: ['./test/specs/**/*.js'],
+  specs: ['./test/features/**/*.feature'],
   // Tests to exclude
   exclude: [],
   maxInstances: 1,
@@ -85,12 +85,11 @@ export const config = {
     ]
   ],
 
-  // Options to be passed to Mocha.
-  // See the full list at http://mochajs.org/
-  mochaOpts: {
-    ui: 'bdd',
-    timeout: oneMinute
-  },
+   cucumberOpts: {
+        require: ['./test/step-definitions/**/*.js'],
+        timeout: 60000,
+    },
+
   //
   // =====
   // Hooks

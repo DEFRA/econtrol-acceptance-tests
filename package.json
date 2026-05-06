@@ -13,7 +13,8 @@
     "report:generate": "allure generate ./allure-results --clean -o ./allure-report",
     "report:open": "allure open ./allure-report",
     "report": "npm run report:generate && npm run report:open",
-    "clean": "rm -rf allure-results allure-report"
+    "clean": "rm -rf allure-results allure-report",
+    "test:github": "npm run clean && wdio run wdio.github.conf.js"
   },
   "devDependencies": {
     "@axe-core/webdriverio": "^4.10.0",

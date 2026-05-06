@@ -22,7 +22,7 @@ runs:
     - name: Run the tests
       shell: bash
       run: |
-        npm run test:smoke
+        npm run test:github
 
     - name: Generate Allure report
       if: always()
