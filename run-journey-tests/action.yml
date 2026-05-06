@@ -1,36 +1,57 @@
 name: Run Journey Tests on GitHub
-description: Run smoke/journey tests and generate Allure reports
+description: Run the journey tests in GitHub actions using the latest images from dockerhub. This is intended to be used as part of a workflow that builds and pushes the images, e.g. publish.yml, but can be used in any workflow.
+
+inputs:
+  example-node-backend:
+    required: false
+    type: string
+  example-node-frontend:
+    required: false
+    type: string
 
 runs:
   using: "composite"
   steps:
-    - name: Checkout acceptance tests
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       with:
         repository: DEFRA/econtrol-acceptance-tests
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version-file: .nvmrc
-        cache: npm
+    - name: Docker Login
+      uses: DEFRA/cdp-build-action/docker-login@main
 
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: npm
     - name: Setup the tests
       run: npm i
       shell: bash
-
+    - name: Start docker compose
+      shell: bash
+      run: |
+          CDP_EXAMPLE_NODE_FRONTEND=${{inputs.example-node-frontend}} \
+          CDP_EXAMPLE_NODE_BACKEND=${{inputs.example-node-backend}} \
+          docker compose up --wait-timeout 300 -d --quiet-pull
     - name: Run the tests
       shell: bash
-      run: npm run test:smoke
-
-    - name: Generate Allure report
+      run: |
+        npm run test:github
+        npm run report
+    - name: debug
       if: always()
+      run: |
+        docker compose logs > logs.txt
+        docker ps
       shell: bash
-      run: npm run report:generate
-
     - name: Upload allure report
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: allure-report
         path: ./allure-report
+    - name: Upload docker compose logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker-compose-logs
+        path: ./logs.txt
