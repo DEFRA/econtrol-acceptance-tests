@@ -1,5 +1,5 @@
 import allure from 'allure-commandline'
-
+import { browser } from '@wdio/globals'
 const oneMinute = 60 * 1000
 
 export const config = {
@@ -14,7 +14,7 @@ export const config = {
   // with `/`, the base url gets prepended, not including the path portion of your baseUrl.
   // If your `url` parameter starts without a scheme or `/` (like `some/path`), the base url
   // gets prepended directly.
-  baseUrl: `http://localhost:3000`,
+  baseUrl: `https://e-cites-control-prototype-56981975969e.herokuapp.com/`,
 
   // Connection to remote chromedriver
   hostname: process.env.CHROMEDRIVER_URL || '127.0.0.1',
@@ -64,7 +64,7 @@ export const config = {
   connectionRetryTimeout: 120000,
   connectionRetryCount: 3,
 
-  framework: 'mocha',
+  framework: 'cucumber',
 
   reporters: [
     [
@@ -178,7 +178,7 @@ export const config = {
    * @param {boolean} result.passed    true if test has passed, otherwise false
    * @param {object}  result.retries   information about spec related retries, e.g. `{ attempts: 0, limit: 0 }`
    */
-  afterTest: async function (
+  afterStep: async function (
     test,
     context,
     { error, result, duration, passed, retries }
