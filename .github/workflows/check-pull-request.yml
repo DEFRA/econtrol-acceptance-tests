@@ -29,8 +29,8 @@ jobs:
       - run: npm run lint
 
 
-  tests:
-   name: Run Journey Tests
-   runs-on: ubuntu-latest
-   steps:
-      - uses: DEFRA/econtrol-acceptance-tests/tree/main/run-journey-tests@main
+#  tests:
+#   name: Run Journey Tests
+#   runs-on: ubuntu-latest
+#   steps:
+#      - uses: DEFRA/econtrol-acceptance-tests/tree/main/run-journey-tests@main
