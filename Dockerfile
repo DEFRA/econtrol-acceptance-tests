@@ -10,9 +10,9 @@ RUN apt-get update -qq \
     zip \
     openjdk-17-jre-headless
 
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
-    && unzip awscliv2.zip \
-    && ./aws/install
+#RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+#    && unzip awscliv2.zip \
+#    && ./aws/install
 
 WORKDIR /app
 
