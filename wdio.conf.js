@@ -12,7 +12,7 @@ export const config = {
         browserName: 'chrome',
         'goog:chromeOptions': {
             args: process.env.HEADLESS === 'true'
-                ? ['--headless=new', '--disable-gpu', '--window-size=1280,800', '--no-sandbox']
+                ? ['--headless=new', '--disable-gpu', '--window-size=1280,800', '--no-sandbox', '--disable-dev-shm-usage']
                 : ['--window-size=1280,800']
         }
     }],
