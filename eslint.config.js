@@ -21,6 +21,17 @@ export default [
         $$: 'readonly',
         expect: 'readonly'
       }
+    },
+    rules: {
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
+    }
+  },
+  {
+    files: ['docker/scripts/mongodb/**/*.js'],
+    languageOptions: {
+      globals: {
+        db: 'readonly'
+      }
     }
   }
 ]
