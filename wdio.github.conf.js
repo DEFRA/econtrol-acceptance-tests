@@ -85,10 +85,10 @@ export const config = {
     ]
   ],
 
-   cucumberOpts: {
-        require: ['./test/step-definitions/**/*.js'],
-        timeout: 60000,
-    },
+  cucumberOpts: {
+    require: ['./test/step-definitions/**/*.js'],
+    timeout: 60000
+  },
 
   //
   // =====
