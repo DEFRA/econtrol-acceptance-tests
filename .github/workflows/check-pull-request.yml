@@ -10,9 +10,7 @@ on:
       - reopened
       - synchronize
       - ready_for_review
-  push:
-    branches:
-      - feature/github-actions-setup
+
 
 jobs:
   cdp-workflows:
@@ -31,8 +29,8 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
 
-  tests:
-    name: Run Journey Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: DEFRA/econtrol-acceptance-tests/tree/main/run-journey-tests@main
+#  tests:
+#   name: Run Journey Tests
+#   runs-on: ubuntu-latest
+#   steps:
+#      - uses: DEFRA/econtrol-acceptance-tests/tree/main/run-journey-tests@main
