@@ -28,7 +28,6 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
 
-
 #  tests:
 #   name: Run Journey Tests
 #   runs-on: ubuntu-latest
