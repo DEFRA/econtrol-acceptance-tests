@@ -59,9 +59,7 @@ Then(
   /^the number of displayed permit results should match the count shown in the message$/,
   async () => {
     const expected = await searchPermitPage.getResultsCountFromMessage()
-    console.log(expected)
     const actual = await searchPermitPage.getDisplayedResultsCount()
-    console.log(actual)
     expect(actual).toBe(expected)
   }
 )
