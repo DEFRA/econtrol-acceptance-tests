@@ -19,8 +19,7 @@ export const config = {
 
     logLevel: 'info',
     bail: 0,
-    /*baseUrl: 'https://econtrol-frontend.dev.cdp-int.defra.cloud/',*/
-    baseUrl: 'https://e-cites-control-prototype-56981975969e.herokuapp.com/',
+    baseUrl: process.env.PROTOTYPE_URL,
 
     waitforTimeout: 10000,
     connectionRetryTimeout: 120000,

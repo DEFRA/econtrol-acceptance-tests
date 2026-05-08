@@ -3,7 +3,7 @@ Feature: Search Permit
 
   Background:
     Given I am on the Search Permit page
-    And I enter password "control"
+    And I enter password 
     And click on continue
     And I click on empty search permit
     And I can see the title "Search for CITES permits"

@@ -37,7 +37,7 @@ class SearchPermitPage extends Page {
   }
 
   get continue() {
-    return $("//button[@type='sumit']")
+    return $("//button[@type='submit']")
   }
 
   get permitNumberInput() {
