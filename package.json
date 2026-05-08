@@ -14,7 +14,9 @@
     "report:open": "allure open ./allure-report",
     "report": "npm run report:generate && npm run report:open",
     "clean": "rm -rf allure-results allure-report",
-    "test:github": "npm run clean && wdio run wdio.github.conf.js"
+    "test:github": "npm run clean && wdio run wdio.github.conf.js",
+    "format": "prettier --write 'test/**/*.js' '**/*.{js,md,json,config.js}'",
+    "format:check": "prettier --check 'test/**/*.js' '**/*.{js,md,json,config.js}'"
   },
   "devDependencies": {
     "@axe-core/webdriverio": "^4.10.0",
