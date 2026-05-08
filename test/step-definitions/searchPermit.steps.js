@@ -11,8 +11,8 @@ Given(/^I can see the title "([^"]*)"$/, async (expectedTitle) => {
   await expect(searchPermitPage.pageHeading).toHaveText(expectedTitle)
 })
 
-Given(/^I enter password "([^"]*)"$/, async (password) => {
-  await searchPermitPage.enterPassword(password)
+Given(/^I enter password$/, async () => {
+  await searchPermitPage.enterPassword(process.env.PROTOTYPE_PASSWORD)
 })
 
 Given(/click on continue/, async () => {
