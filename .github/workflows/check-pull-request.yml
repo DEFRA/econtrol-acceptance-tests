@@ -10,6 +10,9 @@ on:
       - reopened
       - synchronize
       - ready_for_review
+  push:
+    branches:
+      - feature/github-actions-setup
 
 jobs:
   cdp-workflows:
