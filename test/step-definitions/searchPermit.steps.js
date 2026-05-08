@@ -127,40 +127,46 @@ Then(/^I should see a no matching permits or validation message$/, async () => {
   )
 })
 
-Then(/^I should see the message "([^"]*)" for invalid$/, async (expectedMessage) => {
-  await browser.waitUntil(
-    async () => {
-      const text = await searchPermitPage.getVisibleStatusText()
-      return text.toLowerCase().includes(expectedMessage.toLowerCase())
-    },
-    {
-      timeout: 10000,
-      timeoutMsg: `Expected to see the message "${expectedMessage}" on the page.`
-    }
-  )
-})
-
-Then(/^I should see the following permit results for valid:$/, async (dataTable) => {
-  const expectedRows = dataTable.hashes()
-  const actualRows = await searchPermitPage.getResultsAsObjects()
-
-  expect(actualRows.length).toBe(expectedRows.length)
-
-  expectedRows.forEach((expected, i) => {
-    const actual = actualRows[i]
-    for (const [column, expectedValue] of Object.entries(expected)) {
-      const actualValue = (actual?.[column] ?? '').toString().trim()
-      if (actualValue !== expectedValue) {
-        throw new Error(
-          `Row ${i + 1}, column "${column}" mismatch.\n` +
-            `  Expected: "${expectedValue}"\n` +
-            `  Actual:   "${actualValue}"\n` +
-            `  Full row: ${JSON.stringify(actual)}`
-        )
+Then(
+  /^I should see the message "([^"]*)" for invalid$/,
+  async (expectedMessage) => {
+    await browser.waitUntil(
+      async () => {
+        const text = await searchPermitPage.getVisibleStatusText()
+        return text.toLowerCase().includes(expectedMessage.toLowerCase())
+      },
+      {
+        timeout: 10000,
+        timeoutMsg: `Expected to see the message "${expectedMessage}" on the page.`
       }
-    }
-  })
-})
+    )
+  }
+)
+
+Then(
+  /^I should see the following permit results for valid:$/,
+  async (dataTable) => {
+    const expectedRows = dataTable.hashes()
+    const actualRows = await searchPermitPage.getResultsAsObjects()
+
+    expect(actualRows.length).toBe(expectedRows.length)
+
+    expectedRows.forEach((expected, i) => {
+      const actual = actualRows[i]
+      for (const [column, expectedValue] of Object.entries(expected)) {
+        const actualValue = (actual?.[column] ?? '').toString().trim()
+        if (actualValue !== expectedValue) {
+          throw new Error(
+            `Row ${i + 1}, column "${column}" mismatch.\n` +
+              `  Expected: "${expectedValue}"\n` +
+              `  Actual:   "${actualValue}"\n` +
+              `  Full row: ${JSON.stringify(actual)}`
+          )
+        }
+      }
+    })
+  }
+)
 
 Then(/^every result should have the following values:$/, async (dataTable) => {
   const expected = dataTable.hashes()[0]
