@@ -23,12 +23,17 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Check Chrome version
+        run: |
+            google-chrome --version
+            chromedriver --version || true
+
       - name: Run smoke tests
         run: npm run test:smoke
 
       - name: Generate report
         if: always()
-        run: npm run report
+        run: npm run report:generate
 
       - name: Upload report
         if: always()
