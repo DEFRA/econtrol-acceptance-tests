@@ -45,7 +45,7 @@ jobs:
 
       - name: Generate report
         if: always()
-        run: npm run report:generate
+        run: npm run report
 
       - name: Upload report
         if: always()
