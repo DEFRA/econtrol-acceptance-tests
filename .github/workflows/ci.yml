@@ -1,0 +1,55 @@
+name: Run Acceptance Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          repository: DEFRA/econtrol-acceptance-tests
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check Chrome version
+        run: |
+          google-chrome --version
+          chromedriver --version || true
+
+      - name: Run smoke tests
+        run: npm run test:smoke
+        env:
+          PROTOTYPE_URL: ${{ secrets.PROTOTYPE_URL }}
+          PROTOTYPE_PASSWORD: ${{ secrets.PROTOTYPE_PASSWORD }}
+          HEADLESS: 'true'
+
+      - name: Debug allure results
+        if: always()
+        run: |
+          ls -la ./allure-results || true
+          find ./allure-results -type f || true
+
+      - name: Generate report
+        if: always()
+        run: npm run report:generate
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: ./allure-report

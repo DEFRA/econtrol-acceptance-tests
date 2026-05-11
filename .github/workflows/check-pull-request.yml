@@ -11,6 +11,7 @@ on:
       - synchronize
       - ready_for_review
 
+
 jobs:
   cdp-workflows:
     name: Run Pull Request Checks
@@ -27,7 +28,6 @@ jobs:
       - run: npm ci
       - run: npm run format:check
       - run: npm run lint
-
 
 #  tests:
 #   name: Run Journey Tests
