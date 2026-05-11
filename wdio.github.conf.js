@@ -44,6 +44,8 @@ export const config = {
     }
   ],
 
+  baseUrl: process.env.PROTOTYPE_URL,
+
   execArgv: ['--loader', 'esm-module-alias/loader'],
 
   logLevel: 'info',
