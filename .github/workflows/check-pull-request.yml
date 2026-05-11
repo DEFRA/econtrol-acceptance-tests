@@ -10,7 +10,18 @@ on:
       - reopened
       - synchronize
       - ready_for_review
+permissions:
+  id-token: write
+  contents: read
+  checks: write
+  pull-requests: write
 
+env:
+  AWS_REGION: eu-west-2
+  AWS_ACCOUNT_ID: '094954420758'
+  PROTOTYPE_URL: ${{ secrets.PROTOTYPE_URL }}
+  PROTOTYPE_PASSWORD: ${{ secrets.PROTOTYPE_PASSWORD }}
+  HEADLESS: 'true'
 
 jobs:
   cdp-workflows:
@@ -29,8 +40,8 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
 
-#  tests:
-#   name: Run Journey Tests
-#   runs-on: ubuntu-latest
-#   steps:
-#      - uses: DEFRA/econtrol-acceptance-tests/tree/main/run-journey-tests@main
+      tests:
+        name: Run Journey Tests
+        runs-on: ubuntu-latest
+        steps:
+        - uses: DEFRA/econtrol-acceptance-tests/run-journey-tests@main

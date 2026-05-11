@@ -7,12 +7,12 @@
     "node": ">=22.13.1"
   },
   "scripts": {
-    "test": "wdio run wdio.conf.js",
+    "test": "wdio run wdio.github.conf.js --cucumberOpts.tagExpression='@smoke'",
     "test:smoke": "wdio run wdio.github.conf.js --cucumberOpts.tagExpression='@CTS-585'",
     "test:headless": "HEADLESS=true wdio run wdio.conf.js",
     "report:generate": "allure generate ./allure-results --single-file --clean -o ./allure-report",
     "report:open": "allure open ./allure-report",
-    "report": "npm run report:generate && npm run report:open",
+    "report": "npm run report:generate",
     "clean": "rm -rf allure-results allure-report",
     "test:github": "npm run clean && wdio run wdio.github.conf.js",
     "format": "prettier --write 'test/**/*.js' '**/*.{js,md,json,config.js}'",
