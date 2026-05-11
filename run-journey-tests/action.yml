@@ -21,7 +21,7 @@ runs:
 
     - uses: actions/setup-node@v4
       with:
-        node-version: \.nvmrc
+        node-version: .nvmrc
         cache: npm
     - name: Setup the tests
       run: npm i
