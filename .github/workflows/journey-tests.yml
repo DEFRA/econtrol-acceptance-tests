@@ -1,12 +1,19 @@
 name: Run Journey Tests on GitHub
 
-permissions:
-  checks: write
-  pull-requests: write
-
 on:
   workflow_dispatch:
   workflow_call:
+
+permissions:
+  id-token: write
+  contents: read
+  checks: write
+  pull-requests: write
+
+env:
+  AWS_REGION: eu-west-2
+  AWS_ACCOUNT_ID: '094954420758'
+
 jobs:
   build:
     name: Run Journey Tests
