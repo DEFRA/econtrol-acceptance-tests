@@ -6,7 +6,7 @@ const TABLE_HEADER_ALIASES = {
 }
 
 /**
- * Search Permit page 
+ * Search Permit page
  */
 class SearchPermitPage extends Page {
   constructor() {
