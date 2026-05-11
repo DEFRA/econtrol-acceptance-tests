@@ -10,7 +10,7 @@
     "test": "wdio run wdio.github.conf.js --cucumberOpts.tagExpression='@smoke'",
     "test:smoke": "wdio run wdio.github.conf.js --cucumberOpts.tagExpression='@CTS-585'",
     "test:headless": "HEADLESS=true wdio run wdio.conf.js",
-    "report:generate": "allure generate ./allure-results --clean -o ./allure-report",
+    "report:generate": "allure generate ./allure-results --single-file --clean",
     "report:open": "allure open ./allure-report",
     "report": "npm run report:generate",
     "clean": "rm -rf allure-results allure-report",
