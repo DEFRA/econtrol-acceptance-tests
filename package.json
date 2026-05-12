@@ -7,7 +7,7 @@
     "node": ">=22.13.1"
   },
   "scripts": {
-    "test": "wdio run wdio.github.conf.js --cucumberOpts.tagExpression='@CTS-585'",
+    "test": "wdio run wdio.github.conf.js --cucumberOpts.tagExpression='@smoke'",
     "test:smoke": "wdio run wdio.conf.js --cucumberOpts.tagExpression='@CTS-585'",
     "test:headless": "HEADLESS=true wdio run wdio.conf.js",
     "report": "allure generate ./allure-results --single-file --clean -o ./allure-report",
