@@ -11,6 +11,7 @@ inputs:
 
 runs:
   using: 'composite'
+
   steps:
     - uses: actions/checkout@v4
       with:
@@ -23,32 +24,50 @@ runs:
       with:
         node-version-file: .nvmrc
         cache: npm
+
     - name: Setup the tests
-      run: npm i
       shell: bash
+      run: npm i
+
     - name: Start docker compose
       shell: bash
       run: |
-        CDP_EXAMPLE_NODE_FRONTEND=${{inputs.example-node-frontend}} \
-        CDP_EXAMPLE_NODE_BACKEND=${{inputs.example-node-backend}} \
+        CDP_EXAMPLE_NODE_FRONTEND=${{ inputs.example-node-frontend }} \
+        CDP_EXAMPLE_NODE_BACKEND=${{ inputs.example-node-backend }} \
         docker compose up --wait-timeout 300 -d --quiet-pull
+
     - name: Run the tests
       shell: bash
       run: |
         npm run test
+
+    - name: Generate allure report
+      if: always()
+      shell: bash
+      run: |
         npm run report
+
+    - name: Create allure report directory if missing
+      if: always()
+      shell: bash
+      run: |
+        mkdir -p allure-report
+
     - name: debug
       if: always()
+      shell: bash
       run: |
         docker compose logs > logs.txt
         docker ps
-      shell: bash
+
     - name: Upload allure report
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: allure-report
         path: ./allure-report
+        if-no-files-found: warn
+
     - name: Upload docker compose logs
       if: always()
       uses: actions/upload-artifact@v4
