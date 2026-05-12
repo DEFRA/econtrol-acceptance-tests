@@ -22,4 +22,4 @@ jobs:
     name: Run Journey Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: DEFRA/econtrol-acceptance-tests/run-journey-tests@main
+      - uses: DEFRA/econtrol-acceptance-tests/run-journey-tests@feature/github-actions-setup
