@@ -12,33 +12,10 @@ on:
       - ready_for_review
 
 permissions:
-  id-token: write
   contents: read
-  checks: write
-  pull-requests: write
-
-env:
-  AWS_REGION: eu-west-2
-  AWS_ACCOUNT_ID: '094954420758'
-  PROTOTYPE_URL: ${{ secrets.PROTOTYPE_URL }}
-  PROTOTYPE_PASSWORD: ${{ secrets.PROTOTYPE_PASSWORD }}
-  DEV_DATAVERSE_BASE_URL: ${{ secrets.DEV_DATAVERSE_BASE_URL }}
-  DEV_DATAVERSE_CLIENT_ID: ${{ secrets.DEV_DATAVERSE_CLIENT_ID }}
-  TEST_DATAVERSE_BASE_URL: ${{ secrets.TEST_DATAVERSE_BASE_URL }}
-  TEST_DATAVERSE_CLIENT_ID: ${{ secrets.TEST_DATAVERSE_CLIENT_ID }}
-  API_TOKEN_VERSION: ${{ secrets.API_TOKEN_VERSION }}
-  API_TOKEN_GRANT_TYPE: ${{ secrets.API_TOKEN_GRANT_TYPE }}
-  API_TOKEN_RESOURCE: ${{ secrets.API_TOKEN_RESOURCE }}
-  API_CLIENT_ID: ${{ secrets.API_CLIENT_ID }}
-  API_CLIENT_SECRET: ${{ secrets.API_CLIENT_SECRET }}
-  API_BEARER_TOKEN: ${{ secrets.API_BEARER_TOKEN }}
-  SEARCH_PERMIT_API_PATH: ${{ secrets.SEARCH_PERMIT_API_PATH }}
-  ENDORSE_PERMIT_API_PATH: ${{ secrets.ENDORSE_PERMIT_API_PATH }}
-  RETRIEVE_PERMIT_API_PATH: ${{ secrets.RETRIEVE_PERMIT_API_PATH }}
-  HEADLESS: 'true'
 
 jobs:
-  cdp-workflows:
+  code-checks:
     name: Run Pull Request Checks
     runs-on: ubuntu-latest
 
@@ -46,19 +23,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Test code and Create Test Coverage Reports
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
 
-      - run: npm ci
-      - run: npm run format:check
-      - run: npm run lint
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Run lint
+        run: npm run lint
 
   tests:
     name: Run Journey Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: DEFRA/econtrol-acceptance-tests/run-journey-tests@main
+    uses: ./.github/workflows/journey-tests.yml
+    secrets: inherit

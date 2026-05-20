@@ -1,4 +1,4 @@
-import { $ } from '@wdio/globals'
+import { $, browser } from '@wdio/globals'
 import { Page } from './page.js'
 
 const TABLE_HEADER_ALIASES = {
@@ -18,6 +18,35 @@ class SearchPermitPage extends Page {
   open() {
     const start = process.env.URL ?? '/'
     return super.open(start)
+  }
+
+  async ensureReady({ email, password } = {}) {
+    await this.open()
+
+    await browser.waitUntil(
+      async () =>
+        (await this.isDisplayed(this.permitNumberInput)) ||
+        (await this.isDisplayed(this.loginMicrosoftLink)) ||
+        (await this.isDisplayed(this.passwordInput)),
+      {
+        timeout: 10000,
+        timeoutMsg:
+          'Expected search page, Microsoft login, or password screen to be visible.'
+      }
+    )
+
+    if (await this.isDisplayed(this.permitNumberInput)) {
+      return
+    }
+
+    if (await this.isDisplayed(this.loginMicrosoftLink)) {
+      await this.login(email, password)
+    } else if (await this.isDisplayed(this.passwordInput)) {
+      await this.enterPassword(password)
+      await this.clickContinue()
+    }
+
+    await this.permitNumberInput.waitForDisplayed({ timeout: 10000 })
   }
 
   // -------------------------

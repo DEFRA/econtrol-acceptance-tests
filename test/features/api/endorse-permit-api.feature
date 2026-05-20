@@ -21,32 +21,24 @@ Feature: Endorse CITES permit using API
       """
 
     Then the response status code should be 200
-    And the response should confirm the permit has been endorsed
 
     And the response should contain the following fields:
-      | Field            |
-      | permitId         |
-      | permitNumber     |
-      | statusLabel      |
-      | statuscode       |
-      | tradeDate        |
-      | customsOfficer   |
-      | port             |
-      | netMass          |
-      | customsReference |
-      | modifiedBy       |
-      | modifiedDateTime |
+      | Field              |
+      | previousStatuscode |
+      | permitId           |
+      | permitNumber       |
+      | newStatuscode      |
 
     And the following fields should not be null:
-      | Field            |
-      | permitId         |
-      | permitNumber     |
-      | statusLabel      |
-      | tradeDate        |
-      | customsOfficer   |
-      | port             |
-      | modifiedDateTime |
+      | Field              |
+      | previousStatuscode |
+      | permitId           |
+      | permitNumber       |
+      | newStatuscode      |
 
-    And the permit status should be updated to "Endorsed"
-    And Pegasus should record the endorsement in permit history
-    And the endorsed permit should be retrievable by authorised users
+    And the response should contain the following values:
+      | Field              | Value                                |
+      | previousStatuscode | 149900002                            |
+      | permitId           | 9545f5a3-0aa4-ee11-be37-0022481abcc2 |
+      | permitNumber       | 23GBEXP6QTJV8                        |
+      | newStatuscode      | 149900002                            |

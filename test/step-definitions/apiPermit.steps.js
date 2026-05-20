@@ -1,17 +1,6 @@
 import { Given, When, Then } from '@wdio/cucumber-framework'
 import { expect } from '@wdio/globals'
 import {
-  apiDelete,
-  apiGet,
-  apiPost,
-  apiPut,
-  createAuthorizedHeaders,
-  createDefaultHeaders,
-  generateApiToken,
-  sendApiRequest
-} from '../utils/apiClient.js'
-import { apiPaths } from '../config/apiRoutes.js'
-import {
   assertPermitStatus,
   assertResponseConfirmsEndorsement,
   assertResponseExists,
@@ -23,102 +12,48 @@ import {
   parseJsonDocString,
   tableFieldNames
 } from '../utils/apiAssertions.js'
-
-const apiContext = {
-  headers: {},
-  lastRequestBody: undefined,
-  response: undefined
-}
-
-const getPermitNumber = () => {
-  const responseObject = apiContext.response?.data
-    ? getPrimaryResponseObject(apiContext.response.data)
-    : {}
-
-  return (
-    apiContext.lastRequestBody?.permitNumber ??
-    responseObject.permitNumber ??
-    getByPath(responseObject, 'permit.permitNumber')
-  )
-}
-
-const replacePathParams = (path, values) =>
-  Object.entries(values).reduce(
-    (currentPath, [key, value]) =>
-      currentPath.replaceAll(`:${key}`, encodeURIComponent(value)),
-    path
-  )
-
-const sendPermitLookupRequest = async (permitNumber) => {
-  const hasPathParam = apiPaths.retrievePermit.includes(':permitNumber')
-  const path = replacePathParams(apiPaths.retrievePermit, { permitNumber })
-
-  return sendApiRequest({
-    method: hasPathParam ? 'GET' : 'POST',
-    path,
-    headers: apiContext.headers,
-    body: hasPathParam ? undefined : { permitNumber }
-  })
-}
-
-const sendCrudRequest = async ({ method, path, body }) => {
-  const requestConfig = {
-    path,
-    headers: apiContext.headers,
-    body
-  }
-
-  const requests = {
-    DELETE: apiDelete,
-    GET: apiGet,
-    POST: apiPost,
-    PUT: apiPut
-  }
-
-  apiContext.lastRequestBody = body
-  apiContext.response = await requests[method](requestConfig)
-}
+import {
+  apiContext,
+  generateApiTokenAndSetHeaders,
+  getInlinePermitHistory,
+  getPermitNumber,
+  sendCrudRequest,
+  sendEndorsePermitRequest,
+  sendPermitHistoryRequest,
+  sendPermitLookupRequest,
+  sendSearchPermitRequest,
+  setAuthorizedApiHeaders,
+  setDefaultApiHeaders,
+  setRequiredPermitStatus
+} from '../utils/apiPermit.js'
 
 Given('I set the required API headers', async () => {
-  apiContext.headers = createDefaultHeaders()
+  setDefaultApiHeaders()
 })
 
 Given('I generate an API token', async () => {
-  await generateApiToken({ forceRefresh: true })
-  apiContext.headers = await createAuthorizedHeaders()
+  await generateApiTokenAndSetHeaders()
 })
 
 Given('I set the required authorised API headers', async () => {
-  apiContext.headers = await createAuthorizedHeaders()
+  await setAuthorizedApiHeaders()
 })
 
 Given(/^I have a CITES permit with "([^"]*)" status$/, async (status) => {
-  apiContext.requiredPermitStatus = status
+  setRequiredPermitStatus(status)
 })
 
 Given(
   'I send a Search Permit API request with the following body:',
   async (body) => {
-    apiContext.lastRequestBody = parseJsonDocString(body)
-    apiContext.response = await sendApiRequest({
-      method: 'POST',
-      path: apiPaths.searchPermit,
-      headers: apiContext.headers,
-      body: apiContext.lastRequestBody
-    })
+    await sendSearchPermitRequest(parseJsonDocString(body))
   }
 )
 
 When(
   'I send an Endorse Permit API request with valid endorsement details:',
   async (body) => {
-    apiContext.lastRequestBody = parseJsonDocString(body)
-    apiContext.response = await sendApiRequest({
-      method: 'POST',
-      path: apiPaths.endorsePermit,
-      headers: apiContext.headers,
-      body: apiContext.lastRequestBody
-    })
+    await sendEndorsePermitRequest(parseJsonDocString(body))
   }
 )
 
@@ -169,7 +104,16 @@ When('the API response is returned successfully', async () => {
 
 Then(/^the response status code should be (\d+)$/, async (expectedStatus) => {
   assertResponseExists(apiContext)
-  expect(apiContext.response.status).toBe(Number(expectedStatus))
+  const expected = Number(expectedStatus)
+
+  if (apiContext.response.status !== expected) {
+    throw new Error(
+      `Expected API response status ${expected}, but received ${apiContext.response.status} ${apiContext.response.statusText}.\n` +
+        `Request: ${apiContext.response.request.method} ${apiContext.response.request.url}\n` +
+        `Request body: ${JSON.stringify(apiContext.response.request.body)}\n` +
+        `Response body: ${apiContext.response.text}`
+    )
+  }
 })
 
 Then('the response should contain the following fields:', async (dataTable) => {
@@ -183,6 +127,24 @@ Then('the following fields should not be null:', async (dataTable) => {
     apiContext.response.data,
     tableFieldNames(dataTable)
   )
+})
+
+Then('the response should contain the following values:', async (dataTable) => {
+  assertResponseExists(apiContext)
+  const responseObject = getPrimaryResponseObject(apiContext.response.data)
+
+  for (const row of dataTable.hashes()) {
+    const field = row.Field ?? row.field
+    const expectedRaw = row.Value ?? row.value
+
+    if (!field) {
+      throw new Error(`Expected a Field column. Row: ${JSON.stringify(row)}`)
+    }
+
+    const actualValue = getByPath(responseObject, field)
+
+    expect(actualValue?.toString()).toBe(expectedRaw?.toString())
+  }
 })
 
 Then('the response should match the Search Permit API schema', async () => {
@@ -203,31 +165,14 @@ Then(/^the permit status should be updated to "([^"]*)"$/, async (status) => {
 Then('Pegasus should record the endorsement in permit history', async () => {
   assertResponseExists(apiContext)
 
-  const responseObject = getPrimaryResponseObject(apiContext.response.data)
-  const inlineHistory =
-    responseObject.history ??
-    responseObject.permitHistory ??
-    responseObject.events ??
-    responseObject.auditHistory
+  const inlineHistory = getInlinePermitHistory()
 
   if (inlineHistory) {
     expect(JSON.stringify(inlineHistory).toLowerCase()).toContain('endors')
     return
   }
 
-  if (!apiPaths.permitHistory) {
-    throw new Error(
-      'Permit history was not included in the endorsement response. Set PERMIT_HISTORY_API_PATH to verify Pegasus history.'
-    )
-  }
-
-  const permitNumber = getPermitNumber()
-  const path = replacePathParams(apiPaths.permitHistory, { permitNumber })
-  const historyResponse = await sendApiRequest({
-    method: 'GET',
-    path,
-    headers: apiContext.headers
-  })
+  const historyResponse = await sendPermitHistoryRequest()
 
   expect(historyResponse.status).toBe(200)
   expect(JSON.stringify(historyResponse.data).toLowerCase()).toContain('endors')

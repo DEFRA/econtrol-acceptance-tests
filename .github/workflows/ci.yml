@@ -6,21 +6,53 @@ on:
       test-tags:
         description: Cucumber tag expression to run
         required: false
-        default: '@CTS-585'
+        default: '@smoke'
         type: string
+      test-env:
+        description: Test environment
+        required: false
+        default: qa
+        type: choice
+        options:
+          - qa
+          - dev
   push:
     branches:
       - main
 
+permissions:
+  contents: read
+
+env:
+  HEADLESS: 'true'
+  TEST_ENV: ${{ inputs.test-env || secrets.TEST_ENV || 'qa' }}
+  URL: ${{ secrets.URL }}
+  BASE_URL: ${{ secrets.URL }}
+  EMAIL: ${{ secrets.EMAIL }}
+  PASSWORD: ${{ secrets.PASSWORD }}
+  DEV_DATAVERSE_BASE_URL: ${{ secrets.DEV_DATAVERSE_BASE_URL }}
+  DEV_DATAVERSE_CLIENT_ID: ${{ secrets.DEV_DATAVERSE_CLIENT_ID }}
+  TEST_DATAVERSE_BASE_URL: ${{ secrets.TEST_DATAVERSE_BASE_URL }}
+  TEST_DATAVERSE_CLIENT_ID: ${{ secrets.TEST_DATAVERSE_CLIENT_ID }}
+  API_TOKEN_VERSION: ${{ secrets.API_TOKEN_VERSION }}
+  API_TOKEN_GRANT_TYPE: ${{ secrets.API_TOKEN_GRANT_TYPE }}
+  API_TOKEN_RESOURCE: ${{ secrets.API_TOKEN_RESOURCE }}
+  API_CLIENT_ID: ${{ secrets.API_CLIENT_ID }}
+  API_CLIENT_SECRET: ${{ secrets.API_CLIENT_SECRET }}
+  API_BEARER_TOKEN: ${{ secrets.API_BEARER_TOKEN }}
+  SEARCH_PERMIT_API_PATH: ${{ secrets.SEARCH_PERMIT_API_PATH }}
+  ENDORSE_PERMIT_API_PATH: ${{ secrets.ENDORSE_PERMIT_API_PATH }}
+  RETRIEVE_PERMIT_API_PATH: ${{ secrets.RETRIEVE_PERMIT_API_PATH }}
+  PERMIT_HISTORY_API_PATH: ${{ secrets.PERMIT_HISTORY_API_PATH }}
+
 jobs:
-  test:
+  acceptance-tests:
+    name: Run ${{ inputs.test-tags || '@smoke' }} tests
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          repository: DEFRA/econtrol-acceptance-tests
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -29,46 +61,27 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Check Chrome version
-        run: |
-          google-chrome --version
-          chromedriver --version || true
+      - name: Run tests
+        run: npx wdio run wdio.conf.js --cucumberOpts.tagExpression="${{ inputs.test-tags || '@smoke' }}"
 
-      - name: Run smoke tests
-        run: npx wdio run wdio.conf.js --cucumberOpts.tagExpression="${{ inputs.test-tags || '@CTS-585' }}"
-        env:
-          PROTOTYPE_URL: ${{ secrets.PROTOTYPE_URL }}
-          PROTOTYPE_PASSWORD: ${{ secrets.PROTOTYPE_PASSWORD }}
-          DEV_DATAVERSE_BASE_URL: ${{ secrets.DEV_DATAVERSE_BASE_URL }}
-          DEV_DATAVERSE_CLIENT_ID: ${{ secrets.DEV_DATAVERSE_CLIENT_ID }}
-          TEST_DATAVERSE_BASE_URL: ${{ secrets.TEST_DATAVERSE_BASE_URL }}
-          TEST_DATAVERSE_CLIENT_ID: ${{ secrets.TEST_DATAVERSE_CLIENT_ID }}
-          API_TOKEN_VERSION: ${{ secrets.API_TOKEN_VERSION }}
-          API_TOKEN_GRANT_TYPE: ${{ secrets.API_TOKEN_GRANT_TYPE }}
-          API_TOKEN_RESOURCE: ${{ secrets.API_TOKEN_RESOURCE }}
-          API_CLIENT_ID: ${{ secrets.API_CLIENT_ID }}
-          API_CLIENT_SECRET: ${{ secrets.API_CLIENT_SECRET }}
-          API_BEARER_TOKEN: ${{ secrets.API_BEARER_TOKEN }}
-          SEARCH_PERMIT_API_PATH: ${{ secrets.SEARCH_PERMIT_API_PATH }}
-          ENDORSE_PERMIT_API_PATH: ${{ secrets.ENDORSE_PERMIT_API_PATH }}
-          RETRIEVE_PERMIT_API_PATH: ${{ secrets.RETRIEVE_PERMIT_API_PATH }}
-          HEADLESS: 'true'
-
-      - name: Debug allure results
-        if: always()
-        run: |
-          ls -la ./allure-results || true
-          find ./allure-results -type f || true
-
-      - name: Generate report
+      - name: Generate Allure report
         if: always()
         run: npm run report
 
-      - name: Upload report
+      - name: Upload Allure report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
           path: ./allure-report
+          if-no-files-found: warn
+
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: ./allure-results
+          if-no-files-found: warn
