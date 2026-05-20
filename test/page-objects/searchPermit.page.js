@@ -16,29 +16,13 @@ class SearchPermitPage extends Page {
   }
 
   open() {
-    const start = process.env.WDIO_SEARCH_PERMIT_START_PATH ?? '/'
+    const start = process.env.URL ?? '/'
     return super.open(start)
   }
 
-  async openEmptySearch() {
-    const path =
-      process.env.WDIO_SEARCH_PERMIT_EMPTY_PATH ??
-      '/beta-28-05-26/single-search-results/search-results?empty=1'
-
-    return super.open(path)
-  }
-
   // -------------------------
-  // Selectors
+  // selectors
   // -------------------------
-
-  get password() {
-    return $('#password')
-  }
-
-  get continue() {
-    return $("//button[@type='submit']")
-  }
 
   get permitNumberInput() {
     return $('#permitReferences')
@@ -102,21 +86,6 @@ class SearchPermitPage extends Page {
   // -------------------------
   // Actions
   // -------------------------
-
-  async enterPassword(password) {
-    const exists = await this.password.isExisting()
-    if (!exists) return
-
-    await this.password.setValue(password)
-  }
-
-  async clickContinue() {
-    const exists = await this.continue.isExisting()
-    if (!exists) return
-
-    await this.continue.waitForClickable()
-    await this.continue.click()
-  }
 
   async enterPermits(permitNumbers) {
     const list = (

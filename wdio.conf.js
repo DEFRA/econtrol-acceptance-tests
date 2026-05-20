@@ -1,4 +1,7 @@
 import { browser } from '@wdio/globals'
+import { loadEnv } from './test/config/loadEnv.js'
+
+loadEnv('qa')
 
 export const config = {
   runner: 'local',
@@ -28,7 +31,8 @@ export const config = {
 
   logLevel: 'info',
   bail: 0,
-  baseUrl: process.env.PROTOTYPE_URL,
+
+  baseUrl: process.env.BASE_URL,
 
   waitforTimeout: 10000,
   connectionRetryTimeout: 120000,
