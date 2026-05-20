@@ -1,4 +1,4 @@
-name: Run Journey Tests on GitHub
+name: Run Journey Tests
 
 on:
   workflow_dispatch:
@@ -8,6 +8,14 @@ on:
         required: false
         default: '@smoke'
         type: string
+      test-env:
+        description: Test environment
+        required: false
+        default: qa
+        type: choice
+        options:
+          - qa
+          - dev
   workflow_call:
     inputs:
       test-tags:
@@ -15,18 +23,22 @@ on:
         required: false
         default: '@smoke'
         type: string
+      test-env:
+        description: Test environment
+        required: false
+        default: qa
+        type: string
 
 permissions:
-  id-token: write
   contents: read
-  checks: write
-  pull-requests: write
 
 env:
-  AWS_REGION: eu-west-2
-  AWS_ACCOUNT_ID: '094954420758'
-  PROTOTYPE_URL: ${{ secrets.PROTOTYPE_URL }}
-  PROTOTYPE_PASSWORD: ${{ secrets.PROTOTYPE_PASSWORD }}
+  HEADLESS: 'true'
+  TEST_ENV: ${{ inputs.test-env || secrets.TEST_ENV || 'qa' }}
+  URL: ${{ secrets.URL }}
+  BASE_URL: ${{ secrets.URL }}
+  EMAIL: ${{ secrets.EMAIL }}
+  PASSWORD: ${{ secrets.PASSWORD }}
   DEV_DATAVERSE_BASE_URL: ${{ secrets.DEV_DATAVERSE_BASE_URL }}
   DEV_DATAVERSE_CLIENT_ID: ${{ secrets.DEV_DATAVERSE_CLIENT_ID }}
   TEST_DATAVERSE_BASE_URL: ${{ secrets.TEST_DATAVERSE_BASE_URL }}
@@ -40,13 +52,18 @@ env:
   SEARCH_PERMIT_API_PATH: ${{ secrets.SEARCH_PERMIT_API_PATH }}
   ENDORSE_PERMIT_API_PATH: ${{ secrets.ENDORSE_PERMIT_API_PATH }}
   RETRIEVE_PERMIT_API_PATH: ${{ secrets.RETRIEVE_PERMIT_API_PATH }}
-  HEADLESS: 'true'
+  PERMIT_HISTORY_API_PATH: ${{ secrets.PERMIT_HISTORY_API_PATH }}
 
 jobs:
-  build:
-    name: Run Journey Tests
+  journey-tests:
+    name: Run ${{ inputs.test-tags || '@smoke' }} tests
     runs-on: ubuntu-latest
+
     steps:
-      - uses: DEFRA/econtrol-acceptance-tests/run-journey-tests@feature/github-actions-setup
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run journey tests
+        uses: ./run-journey-tests
         with:
           test-tags: ${{ inputs.test-tags || '@smoke' }}

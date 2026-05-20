@@ -20,7 +20,7 @@ export const config = {
   port: process.env.CHROMEDRIVER_PORT || 4444,
   path: '/',
 
-  baseUrl: process.env.PROTOTYPE_URL,
+  baseUrl: process.env.URL,
 
   // Tests to run
   specs: ['./test/features/**/*.feature'],
@@ -51,7 +51,7 @@ export const config = {
     }
   ],
 
-  baseUrl: process.env.PROTOTYPE_URL,
+  baseUrl: process.env.URL,
 
   execArgv: ['--loader', 'esm-module-alias/loader'],
 

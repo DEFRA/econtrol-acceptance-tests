@@ -5,7 +5,7 @@ Feature: Search and validate CITES permits using API
     And I send a Search Permit API request with the following body:
       """
       {
-        "permitNumber": "24GBEXP9HV17U"
+        "permitNumber": "23GBEXP1YILK4"
       }
       """
     When the API response is returned successfully
