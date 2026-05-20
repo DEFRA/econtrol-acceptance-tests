@@ -91,6 +91,7 @@ export const config = {
 
   cucumberOpts: {
     require: ['./test/step-definitions/**/*.js'],
+    tagExpression: process.env.TEST_TAGS || '@smoke',
     timeout: 60000
   },
 
