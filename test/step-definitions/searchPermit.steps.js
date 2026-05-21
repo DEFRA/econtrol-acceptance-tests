@@ -56,6 +56,13 @@ When(/I click on Change Search/, async () => {
   await searchPermitPage.clickChangeSearch()
 })
 
+When(
+  /^I select "([^"]*)" for permit number "([^"]*)"$/,
+  async (actionText, permitNumber) => {
+    await searchPermitPage.selectResultAction(permitNumber, actionText)
+  }
+)
+
 Then(
   /^I should see a message showing the number of permits that matched my search$/,
   async () => {

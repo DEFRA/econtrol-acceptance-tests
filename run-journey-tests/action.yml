@@ -21,6 +21,10 @@ runs:
       shell: bash
       run: npm ci
 
+    - name: Clean previous reports
+      shell: bash
+      run: npm run clean
+
     - name: Run tests
       shell: bash
       run: npx wdio run wdio.conf.js --cucumberOpts.tagExpression="${{ inputs.test-tags }}"

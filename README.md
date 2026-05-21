@@ -247,12 +247,14 @@ npm run test:headless
 You can also run a specific tag directly:
 
 ```bash
-npx wdio run wdio.conf.js --cucumberOpts.tagExpression='@permit-search'
+npm run clean && npx wdio run wdio.conf.js --cucumberOpts.tagExpression='@permit-search'
 ```
 
 ## Reports
 
-Tests write Allure results to `allure-results`.
+Tests write Allure results to `allure-results`. The npm test scripts clean `allure-results` and `allure-report` before each run so the report only contains the scenarios from the latest test run.
+
+If you run `npx wdio` directly, run `npm run clean` first. Otherwise Allure can include old scenarios from previous runs.
 
 Generate the report:
 

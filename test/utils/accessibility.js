@@ -2,6 +2,8 @@ import AxeBuilder from '@axe-core/webdriverio'
 import { browser } from '@wdio/globals'
 
 const DEFAULT_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
+const PAGE_READY_RETRIES = 2
+const PAGE_READY_RETRY_DELAY_MS = 1000
 
 const formatNode = (node) => {
   const target = node.target?.join(', ') ?? 'unknown target'
@@ -30,10 +32,45 @@ const formatViolation = (violation) => {
 const formatViolations = (violations) =>
   violations.map(formatViolation).join('\n\n')
 
+const waitForPageReady = async () => {
+  await browser.waitUntil(
+    async () => {
+      const readyState = await browser.execute(() => document.readyState)
+      return readyState === 'complete'
+    },
+    {
+      timeout: 10000,
+      timeoutMsg:
+        'Expected page document to be ready before accessibility scan.'
+    }
+  )
+
+  await browser.$('body').waitForExist({ timeout: 10000 })
+}
+
+const runAxeScan = async () =>
+  new AxeBuilder({ client: browser }).withTags(DEFAULT_TAGS).analyze()
+
+const isPageFrameNotReadyError = (error) =>
+  error?.message?.includes('Page/Frame is not ready')
+
 export const checkPageAccessibility = async () => {
-  const results = await new AxeBuilder({ client: browser })
-    .withTags(DEFAULT_TAGS)
-    .analyze()
+  let results
+
+  for (let attempt = 1; attempt <= PAGE_READY_RETRIES; attempt++) {
+    await waitForPageReady()
+
+    try {
+      results = await runAxeScan()
+      break
+    } catch (error) {
+      if (!isPageFrameNotReadyError(error) || attempt === PAGE_READY_RETRIES) {
+        throw error
+      }
+
+      await browser.pause(PAGE_READY_RETRY_DELAY_MS)
+    }
+  }
 
   if (results.violations.length > 0) {
     throw new Error(

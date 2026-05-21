@@ -1,7 +1,7 @@
 import { browser } from '@wdio/globals'
 import { loadEnv } from './test/config/loadEnv.js'
 
-loadEnv('qa')
+loadEnv('dev')
 
 export const config = {
   runner: 'local',
