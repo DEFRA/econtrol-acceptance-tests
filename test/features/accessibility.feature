@@ -1,4 +1,4 @@
-@accessibility @ui
+@accessibility @ui @test
 Feature: Accessibility
 
   Background:

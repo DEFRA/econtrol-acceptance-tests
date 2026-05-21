@@ -1,4 +1,4 @@
-@api @search-permit-api
+@api @search-permit-api @test
 Feature: Search and validate CITES permits using API
   Scenario: Validate Search Permit API response
     Given I set the required authorised API headers

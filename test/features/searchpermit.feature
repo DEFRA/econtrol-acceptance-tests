@@ -1,4 +1,4 @@
-@smoke
+@smoke @test
 Feature: Search Permit
 
   Background:

@@ -5,7 +5,7 @@ inputs:
   test-tags:
     description: Cucumber tag expression to run.
     required: false
-    default: '@smoke'
+    default: '@test'
 
 runs:
   using: composite
