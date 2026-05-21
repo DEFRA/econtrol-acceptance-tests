@@ -12,6 +12,7 @@ import {
   parseJsonDocString,
   tableFieldNames
 } from '../utils/apiAssertions.js'
+import { resolveEnvPlaceholders } from '../utils/envPlaceholders.js'
 import {
   apiContext,
   generateApiTokenAndSetHeaders,
@@ -46,14 +47,18 @@ Given(/^I have a CITES permit with "([^"]*)" status$/, async (status) => {
 Given(
   'I send a Search Permit API request with the following body:',
   async (body) => {
-    await sendSearchPermitRequest(parseJsonDocString(body))
+    await sendSearchPermitRequest(
+      resolveEnvPlaceholders(parseJsonDocString(body))
+    )
   }
 )
 
 When(
   'I send an Endorse Permit API request with valid endorsement details:',
   async (body) => {
-    await sendEndorsePermitRequest(parseJsonDocString(body))
+    await sendEndorsePermitRequest(
+      resolveEnvPlaceholders(parseJsonDocString(body))
+    )
   }
 )
 
@@ -142,8 +147,9 @@ Then('the response should contain the following values:', async (dataTable) => {
     }
 
     const actualValue = getByPath(responseObject, field)
+    const expectedValue = resolveEnvPlaceholders(expectedRaw)
 
-    expect(actualValue?.toString()).toBe(expectedRaw?.toString())
+    expect(actualValue?.toString()).toBe(expectedValue?.toString())
   }
 })
 

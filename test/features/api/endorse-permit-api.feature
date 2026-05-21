@@ -8,7 +8,7 @@ Feature: Endorse CITES permit using API
     When I send an Endorse Permit API request with valid endorsement details:
       """
       {
-        "permitId": "9545f5a3-0aa4-ee11-be37-0022481abcc2",
+        "permitId": "${ENDORSEMENT_PERMIT_ID}",
         "cites_quantityreturned": 1,
         "cites_netmassreturned": 10.5,
         "cites_unitreturned": 149900001,
@@ -39,6 +39,6 @@ Feature: Endorse CITES permit using API
     And the response should contain the following values:
       | Field              | Value                                |
       | previousStatuscode | 149900002                            |
-      | permitId           | 9545f5a3-0aa4-ee11-be37-0022481abcc2 |
-      | permitNumber       | 23GBEXP6QTJV8                        |
+      | permitId           | ${ENDORSEMENT_PERMIT_ID}             |
+      | permitNumber       | ${ENDORSEMENT_PERMIT_NUMBER}         |
       | newStatuscode      | 149900002                            |
