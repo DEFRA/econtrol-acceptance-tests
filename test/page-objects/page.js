@@ -85,8 +85,20 @@ class Page {
     await this.submitButton.waitForClickable()
     await this.submitButton.click()
 
-    await this.yesButton.waitForClickable()
-    await this.yesButton.click()
+    await browser.waitUntil(
+      async () =>
+        (await this.isDisplayed(this.yesButton)) ||
+        (await this.isDisplayed(this.pageHeading)),
+      {
+        timeout: 15000,
+        timeoutMsg:
+          'Expected either Microsoft stay-signed-in prompt or application page after login.'
+      }
+    )
+
+    if (await this.isDisplayed(this.yesButton)) {
+      await this.yesButton.click()
+    }
   }
 }
 

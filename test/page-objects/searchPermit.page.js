@@ -156,6 +156,14 @@ class SearchPermitPage extends Page {
     await this.changeSearch.click()
   }
 
+  async selectResultAction(permitNumber, actionText) {
+    const row = await this.findResultRowByPermitNumber(permitNumber)
+    const action = await row.$(`a=${actionText}`)
+
+    await action.waitForClickable({ timeout: 10000 })
+    await action.click()
+  }
+
   // -------------------------
   // Results message helpers
   // -------------------------
@@ -278,6 +286,24 @@ class SearchPermitPage extends Page {
     }
 
     return results
+  }
+
+  async findResultRowByPermitNumber(permitNumber) {
+    await this.resultsTable.waitForDisplayed({ timeout: 10000 })
+
+    const rows = await this.elementArrayToList(this.resultRows)
+
+    for (const row of rows) {
+      const text = await row.getText()
+
+      if (text.includes(permitNumber)) {
+        return row
+      }
+    }
+
+    throw new Error(
+      `Could not find a result row for permit number "${permitNumber}".`
+    )
   }
 
   // -------------------------
