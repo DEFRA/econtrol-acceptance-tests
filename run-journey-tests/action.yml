@@ -25,9 +25,23 @@ runs:
       shell: bash
       run: npm run clean
 
+    - name: Validate API environment
+      if: contains(inputs.test-tags, '@api')
+      shell: bash
+      run: |
+        if [ -z "$API_BASE_URL" ]; then
+          echo "API_BASE_URL is not set. Add QA_DATAVERSE_BASE_URL or TEST_DATAVERSE_BASE_URL for QA runs, and DEV_DATAVERSE_BASE_URL for dev runs."
+          exit 1
+        fi
+
+        if [ -z "$API_BEARER_TOKEN" ]; then
+          echo "API_BEARER_TOKEN is not set. Add a fresh manually generated token as a GitHub secret."
+          exit 1
+        fi
+
     - name: Run tests
       shell: bash
-      run: npx wdio run wdio.conf.js --cucumberOpts.tagExpression="${{ inputs.test-tags }}"
+      run: npx wdio run wdio.conf.js --cucumberOpts.tags="${{ inputs.test-tags }}"
 
     - name: Generate Allure report
       if: always()
