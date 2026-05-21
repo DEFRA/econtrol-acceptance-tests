@@ -26,6 +26,7 @@ runs:
       run: npm run clean
 
     - name: Validate application environment
+      if: ${{ !contains(inputs.test-tags, '@api') }}
       shell: bash
       run: |
         if [ -z "$URL" ] && [ -z "$BASE_URL" ]; then
@@ -92,7 +93,9 @@ runs:
     - name: Generate Allure report
       if: always()
       shell: bash
-      run: npm run report
+      run: |
+        mkdir -p allure-results
+        npm run report
 
     - name: Upload Allure report
       if: always()
