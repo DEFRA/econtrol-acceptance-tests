@@ -1,111 +1,311 @@
-econtrol-acceptance-tests
+# eControl Acceptance Tests
 
-The template to create a service that runs WDIO tests against an environment.
+Acceptance test suite for the eControl CITES permit journey. The suite covers browser journeys, backend API checks, and accessibility checks using WebdriverIO, Cucumber, and Axe.
 
-- [Local](#local)
-  - [Requirements](#requirements)
-    - [Node.js](#nodejs)
-  - [Setup](#setup)
-  - [Running local tests](#running-local-tests)
-  - [Debugging local tests](#debugging-local-tests)
-- [Production](#production)
-  - [Debugging tests](#debugging-tests)
-- [Licence](#licence)
-  - [About the licence](#about-the-licence)
+## Tech Stack
 
-## Local Development
+- Node.js `>=22.13.1`
+- WebdriverIO v9
+- Cucumber / Gherkin feature files
+- Chrome local runner
+- Axe via `@axe-core/webdriverio` for accessibility checks
+- Allure reporting
+- ESLint and Prettier for JavaScript formatting and linting
+- Dotenv for environment-specific configuration
 
-### Requirements
+## Project Structure
 
-#### Node.js
-
-Please install [Node.js](http://nodejs.org/) `>= v20` and [npm](https://nodejs.org/) `>= v9`. You will find it
-easier to use the Node Version Manager [nvm](https://github.com/creationix/nvm)
-
-To use the correct version of Node.js for this application, via nvm:
-
-```bash
-nvm use
+```text
+test/
+  features/
+    searchpermit.feature
+    endorsepermit.feature
+    accessibility.feature
+    api/
+      search-permit-api.feature
+      endorse-permit-api.feature
+  step-definitions/
+    searchPermit.steps.js
+    endorsepermit.steps.js
+    apiPermit.steps.js
+    accessibility.steps.js
+  page-objects/
+    page.js
+    searchPermit.page.js
+  utils/
+    apiClient.js
+    apiPermit.js
+    apiAssertions.js
+    accessibility.js
+    tableAssertions.js
+  config/
+    apiRoutes.js
+    loadEnv.js
 ```
 
-### Setup
+## How Tests Are Written
 
-Install application dependencies:
+Tests are written as Cucumber feature files. The feature files should describe the user or API behaviour in readable business language.
+
+Test data is kept directly in the feature files. For example, permit numbers and expected table values are written in the Gherkin tables instead of being hidden behind aliases in a separate test data file. This makes it easier to update test inputs when permit data changes.
+
+Step definitions should stay small. They should read values from the feature file, call a page object or utility, and make clear assertions.
+
+Page objects contain browser interaction logic, such as opening the Search Permit page, entering permit numbers, clicking buttons, and reading table values.
+
+Reusable assertion and parsing logic lives in `test/utils`. For example, `tableAssertions.js` is generic and can be reused by other pages that need to compare table rows from Cucumber examples.
+
+## Test Types
+
+### UI Journey Tests
+
+UI tests use WebdriverIO with Chrome and Cucumber. They cover journeys such as searching for permits and checking the displayed results.
+
+Main files:
+
+- `test/features/searchpermit.feature`
+- `test/features/endorsepermit.feature`
+- `test/step-definitions/searchPermit.steps.js`
+- `test/page-objects/searchPermit.page.js`
+
+### API Tests
+
+API tests call Dataverse-backed endpoints directly using `fetch` through the shared API client.
+
+Main files:
+
+- `test/features/api/search-permit-api.feature`
+- `test/features/api/endorse-permit-api.feature`
+- `test/step-definitions/apiPermit.steps.js`
+- `test/utils/apiClient.js`
+- `test/utils/apiPermit.js`
+- `test/utils/apiAssertions.js`
+
+API paths and Dataverse environment settings are resolved in `test/config/apiRoutes.js`.
+
+### Accessibility Tests
+
+Accessibility tests use `@axe-core/webdriverio`.
+
+The accessibility scenario opens the Search Permit page and runs Axe against the current browser page:
+
+```gherkin
+@accessibility @ui
+Feature: Accessibility
+
+  Scenario: Search Permit page has no accessibility violations
+    Then the page should have no accessibility violations
+```
+
+The implementation is in `test/utils/accessibility.js`. It checks the page using these Axe tags:
+
+- `wcag2a`
+- `wcag2aa`
+- `wcag21a`
+- `wcag21aa`
+
+If violations are found, the test fails and prints the rule, impact, help URL, and affected nodes.
+
+## Setup
+
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-### Running local tests
-
-Start application you are testing on the url specified in `baseUrl` [wdio.local.conf.js](wdio.local.conf.js)
+Create an environment file for the environment you want to run against, for example:
 
 ```bash
-npm run test:local
+.env.dev
+.env.qa
 ```
 
-### Debugging local tests
+Environment files are loaded by `test/config/loadEnv.js`. If `TEST_ENV` is not set, the default environment is `dev`.
+
+Common environment variables:
 
 ```bash
-npm run test:local:debug
+TEST_ENV=dev
+URL=https://your-ui-url
+BASE_URL=https://your-ui-url
+EMAIL=your-login-email
+PASSWORD=your-login-password
+
+DEV_DATAVERSE_BASE_URL=https://your-dev-dataverse-org.api.crm11.dynamics.com
+DEV_DATAVERSE_CLIENT_ID=your-dev-client-id
+
+TEST_DATAVERSE_BASE_URL=https://your-test-dataverse-org.api.crm11.dynamics.com
+TEST_DATAVERSE_CLIENT_ID=your-test-client-id
+
+API_BEARER_TOKEN=your-token
+API_TOKEN_VERSION=1
+API_TOKEN_GRANT_TYPE=implicit
+API_TOKEN_RESOURCE=https://your-dataverse-org.crm11.dynamics.com/
+
+SEARCH_PERMIT_API_PATH=cites_SearchPermitByNumber
+ENDORSE_PERMIT_API_PATH=cites_EndorsePermit
+RETRIEVE_PERMIT_API_PATH=cites_SearchPermitByNumber
+PERMIT_HISTORY_API_PATH=
 ```
 
-## Production
+Do not commit real tokens, passwords, or environment-specific secrets.
 
-### Running the tests
+## GitHub Actions Secrets
 
-Tests are run from the CDP-Portal under the Test Suites section. Before any changes can be run, a new docker image must be built, this will happen automatically when a pull request is merged into the `main` branch.
-You can check the progress of the build under the actions section of this repository. Builds typically take around 1-2 minutes.
+Set these repository or environment secrets in GitHub before running the workflows.
 
-The results of the test run are made available in the portal.
+Required for UI and accessibility tests:
 
-## Requirements of CDP Environment Tests
+- `URL`: eControl application URL.
+- `EMAIL`: login email for the authorised test user.
+- `PASSWORD`: login password for the authorised test user.
+- `TEST_ENV`: target environment, usually `qa` or `dev`. The workflow defaults to `qa` if this is not set.
 
-1. Your service builds as a docker container using the `.github/workflows/publish.yml`
-   The workflow tags the docker images allowing the CDP Portal to identify how the container should be run on the platform.
-   It also ensures its published to the correct docker repository.
+Required for API tests:
 
-2. The Dockerfile's entrypoint script should return exit code of 0 if the test suite passes or 1/>0 if it fails
+- `TEST_DATAVERSE_BASE_URL`: QA/test Dataverse base URL.
+- `TEST_DATAVERSE_CLIENT_ID`: QA/test Dataverse client ID.
+- `DEV_DATAVERSE_BASE_URL`: dev Dataverse base URL, required when running with `TEST_ENV=dev`.
+- `DEV_DATAVERSE_CLIENT_ID`: dev Dataverse client ID, required when running with `TEST_ENV=dev`.
 
-3. Test reports should be published to S3 using the script in `./bin/publish-tests.sh`
+Authentication secrets. Use one of these approaches:
 
-## Running on GitHub
+- `API_BEARER_TOKEN`: simplest option, paste a valid bearer token generated outside the test run.
+- Or token generation secrets:
+  - `API_TOKEN_VERSION`
+  - `API_TOKEN_GRANT_TYPE`
+  - `API_TOKEN_RESOURCE`
+  - `API_CLIENT_ID`
+  - `API_CLIENT_SECRET`
 
-Alternatively you can run the test suite as a GitHub workflow.
-Test runs on GitHub are not able to connect to the CDP Test environments. Instead, they run the tests agains a version of the services running in docker.
-A docker compose `compose.yml` is included as a starting point, which includes the databases (mongodb, redis) and infrastructure (localstack) pre-setup.
+Optional API route override secrets:
 
-Steps:
+- `SEARCH_PERMIT_API_PATH`
+- `ENDORSE_PERMIT_API_PATH`
+- `RETRIEVE_PERMIT_API_PATH`
+- `PERMIT_HISTORY_API_PATH`
 
-1. Edit the compose.yml to include your services.
-2. Modify the scripts in docker/scripts to pre-populate the database, if required and create any localstack resources.
-3. Test the setup locally with `docker compose up` and `npm run test:github`
-4. Set up the workflow trigger in `.github/workflows/journey-tests`.
+The permit numbers and expected API payload values are kept directly in the feature files, so GitHub variables such as `VALID_IMPORT_PERMIT_NUMBER` or `ENDORSEMENT_PERMIT_ID` are no longer required.
 
-By default, the provided workflow will run when triggered manually from GitHub or when triggered by another workflow.
+## Running Tests
 
-If you want to use the repository exclusively for running docker composed based test suites consider displaying the publish.yml workflow.
+Run the default GitHub-style suite:
 
-## BrowserStack
+```bash
+npm test
+```
 
-Two wdio configuration files are provided to help run the tests using BrowserStack in both a GitHub workflow (`wdio.github.browserstack.conf.js`) and from the CDP Portal (`wdio.browserstack.conf.js`).
-They can be run from npm using the `npm run test:browserstack` (for running via portal) and `npm run test:github:browserstack` (from GitHib runner).
-See the CDP Documentation for more details.
+Run smoke tests:
 
-## Licence
+```bash
+npm run test:smoke
+```
 
-THIS INFORMATION IS LICENSED UNDER THE CONDITIONS OF THE OPEN GOVERNMENT LICENCE found at:
+Run the endorse permit UI journey against dev:
 
-<http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3>
+```bash
+npm run test:dev
+```
 
-The following attribution statement MUST be cited in your products and applications when using this information.
+Run the endorse permit UI journey against QA:
 
-> Contains public sector information licensed under the Open Government licence v3
+```bash
+npm run test:qa
+```
 
-### About the licence
+Run the Search Permit API test:
 
-The Open Government Licence (OGL) was developed by the Controller of Her Majesty's Stationery Office (HMSO) to enable
-information providers in the public sector to license the use and re-use of their information under a common open
-licence.
+```bash
+npm run test:api
+```
 
-It is designed to encourage use and re-use of information freely and flexibly, with only a few conditions.
+Run API tests against dev:
+
+```bash
+npm run test:api:dev
+```
+
+Run API tests against QA:
+
+```bash
+npm run test:api:qa
+```
+
+Run accessibility tests:
+
+```bash
+npm run test:accessibility
+```
+
+Run all configured features headlessly:
+
+```bash
+npm run test:headless
+```
+
+You can also run a specific tag directly:
+
+```bash
+npm run clean && npx wdio run wdio.conf.js --cucumberOpts.tagExpression='@permit-search'
+```
+
+## Reports
+
+Tests write Allure results to `allure-results`. The npm test scripts clean `allure-results` and `allure-report` before each run so the report only contains the scenarios from the latest test run.
+
+If you run `npx wdio` directly, run `npm run clean` first. Otherwise Allure can include old scenarios from previous runs.
+
+Generate the report:
+
+```bash
+npm run report
+```
+
+Open the report:
+
+```bash
+npm run report:open
+```
+
+Clean generated reports:
+
+```bash
+npm run clean
+```
+
+## Code Quality
+
+Run linting:
+
+```bash
+npm run lint
+```
+
+Fix lint issues where possible:
+
+```bash
+npm run lint:fix
+```
+
+Format files:
+
+```bash
+npm run format
+```
+
+Check formatting:
+
+```bash
+npm run format:check
+```
+
+## Conventions
+
+- Keep readable test data in feature files.
+- Keep step definitions thin.
+- Put browser interactions in page objects.
+- Put reusable assertions and shared logic in `test/utils`.
+- Prefer generic utility names when the helper can be reused across pages.
+- Use tags to keep suites easy to run, for example `@smoke`, `@api`, `@accessibility`, and journey-specific tags.
+- Do not commit secrets or local tokens.

@@ -14,16 +14,16 @@ export const config = {
   // with `/`, the base url gets prepended, not including the path portion of your baseUrl.
   // If your `url` parameter starts without a scheme or `/` (like `some/path`), the base url
   // gets prepended directly.
-  
+
   // Connection to remote chromedriver
   hostname: process.env.CHROMEDRIVER_URL || '127.0.0.1',
   port: process.env.CHROMEDRIVER_PORT || 4444,
   path: '/',
 
-  baseUrl: process.env.PROTOTYPE_URL,
+  baseUrl: process.env.URL,
 
   // Tests to run
-   specs: ['./test/features/**/*.feature'],
+  specs: ['./test/features/**/*.feature'],
   // Tests to exclude
   exclude: [],
   maxInstances: 1,
@@ -50,6 +50,8 @@ export const config = {
       }
     }
   ],
+
+  baseUrl: process.env.URL,
 
   execArgv: ['--loader', 'esm-module-alias/loader'],
 
@@ -89,6 +91,7 @@ export const config = {
 
   cucumberOpts: {
     require: ['./test/step-definitions/**/*.js'],
+    tagExpression: process.env.TEST_TAGS || '@smoke',
     timeout: 60000
   },
 
