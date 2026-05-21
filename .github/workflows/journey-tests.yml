@@ -56,7 +56,7 @@ env:
 
 jobs:
   journey-tests:
-    name: Run ${{ inputs.test-tags || '@smoke' }} tests
+    name: Run ${{ inputs.test-tags || '@test' }} tests
     runs-on: ubuntu-latest
 
     steps:
@@ -66,4 +66,4 @@ jobs:
       - name: Run journey tests
         uses: ./run-journey-tests
         with:
-          test-tags: ${{ inputs.test-tags || '@smoke' }}
+          test-tags: ${{ inputs.test-tags || '@test' }}

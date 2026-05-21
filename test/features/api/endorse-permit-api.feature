@@ -1,4 +1,4 @@
-@api @endorse-permit-api
+@api @endorse-permit-api @test
 Feature: Endorse CITES permit using API
 
   Scenario: Endorse an eligible CITES permit successfully
