@@ -1,15 +1,69 @@
-name: Run Journey Tests on GitHub
-
-permissions:
-  checks: write
-  pull-requests: write
+name: Run Journey Tests
 
 on:
   workflow_dispatch:
+    inputs:
+      test-tags:
+        description: Cucumber tag expression to run
+        required: false
+        default: '@smoke'
+        type: string
+      test-env:
+        description: Test environment
+        required: false
+        default: qa
+        type: choice
+        options:
+          - qa
+          - dev
   workflow_call:
+    inputs:
+      test-tags:
+        description: Cucumber tag expression to run
+        required: false
+        default: '@smoke'
+        type: string
+      test-env:
+        description: Test environment
+        required: false
+        default: qa
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  HEADLESS: 'true'
+  TEST_ENV: ${{ inputs.test-env || secrets.TEST_ENV || 'qa' }}
+  URL: ${{ secrets.URL }}
+  BASE_URL: ${{ secrets.URL }}
+  EMAIL: ${{ secrets.EMAIL }}
+  PASSWORD: ${{ secrets.PASSWORD }}
+  DEV_DATAVERSE_BASE_URL: ${{ secrets.DEV_DATAVERSE_BASE_URL }}
+  DEV_DATAVERSE_CLIENT_ID: ${{ secrets.DEV_DATAVERSE_CLIENT_ID }}
+  TEST_DATAVERSE_BASE_URL: ${{ secrets.TEST_DATAVERSE_BASE_URL }}
+  TEST_DATAVERSE_CLIENT_ID: ${{ secrets.TEST_DATAVERSE_CLIENT_ID }}
+  API_TOKEN_VERSION: ${{ secrets.API_TOKEN_VERSION }}
+  API_TOKEN_GRANT_TYPE: ${{ secrets.API_TOKEN_GRANT_TYPE }}
+  API_TOKEN_RESOURCE: ${{ secrets.API_TOKEN_RESOURCE }}
+  API_CLIENT_ID: ${{ secrets.API_CLIENT_ID }}
+  API_CLIENT_SECRET: ${{ secrets.API_CLIENT_SECRET }}
+  API_BEARER_TOKEN: ${{ secrets.API_BEARER_TOKEN }}
+  SEARCH_PERMIT_API_PATH: ${{ secrets.SEARCH_PERMIT_API_PATH }}
+  ENDORSE_PERMIT_API_PATH: ${{ secrets.ENDORSE_PERMIT_API_PATH }}
+  RETRIEVE_PERMIT_API_PATH: ${{ secrets.RETRIEVE_PERMIT_API_PATH }}
+  PERMIT_HISTORY_API_PATH: ${{ secrets.PERMIT_HISTORY_API_PATH }}
+
 jobs:
-  build:
-    name: Run Journey Tests
+  journey-tests:
+    name: Run ${{ inputs.test-tags || '@test' }} tests
     runs-on: ubuntu-latest
+
     steps:
-      - uses: DEFRA/econtrol-acceptance-tests/run-journey-tests@main
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run journey tests
+        uses: ./run-journey-tests
+        with:
+          test-tags: ${{ inputs.test-tags || '@test' }}
