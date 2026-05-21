@@ -1,9 +1,20 @@
 import { Given, When, Then } from '@wdio/cucumber-framework'
 import { browser, expect } from '@wdio/globals'
 import searchPermitPage from '../page-objects/searchPermit.page'
+import {
+  assertEveryRowMatches,
+  assertRowsHaveColumns,
+  assertRowsMatch,
+  assertValuesMatchSearchTerms,
+  columnNamesFromTable,
+  valuesFromTableColumn
+} from '../utils/tableAssertions.js'
 
 Given(/^I am on the Search Permit page$/, async () => {
-  await searchPermitPage.open()
+  await searchPermitPage.ensureReady({
+    email: process.env.EMAIL,
+    password: process.env.PASSWORD
+  })
 })
 
 Given(/^I can see the title "([^"]*)"$/, async (expectedTitle) => {
@@ -12,7 +23,7 @@ Given(/^I can see the title "([^"]*)"$/, async (expectedTitle) => {
 })
 
 Given(/^I enter password$/, async () => {
-  await searchPermitPage.enterPassword(process.env.PROTOTYPE_PASSWORD)
+  await searchPermitPage.enterPassword(process.env.PASSWORD)
 })
 
 Given(/click on continue/, async () => {
@@ -31,10 +42,9 @@ When(
 )
 
 When(/^I search using the following permit numbers:$/, async (dataTable) => {
-  const permitNumbers = dataTable
-    .hashes()
-    .map((row) => row['Permit number'] ?? row['permit number'] ?? '')
-  await searchPermitPage.search(permitNumbers)
+  await searchPermitPage.search(
+    valuesFromTableColumn(dataTable, ['Permit number', 'permit number'])
+  )
 })
 
 When(/^I search for the following permits:$/, async (dataTable) => {
@@ -45,6 +55,13 @@ When(/^I search for the following permits:$/, async (dataTable) => {
 When(/I click on Change Search/, async () => {
   await searchPermitPage.clickChangeSearch()
 })
+
+When(
+  /^I select "([^"]*)" for permit number "([^"]*)"$/,
+  async (actionText, permitNumber) => {
+    await searchPermitPage.selectResultAction(permitNumber, actionText)
+  }
+)
 
 Then(
   /^I should see a message showing the number of permits that matched my search$/,
@@ -67,30 +84,19 @@ Then(
 Then(
   /^the displayed permit results should match the search criteria$/,
   async () => {
-    const searchedList = searchPermitPage.lastSearchedAsList.map((s) =>
-      s.toLowerCase()
-    )
     const permitNumberValues = await searchPermitPage.getColumnValues(0)
-
-    expect(permitNumberValues.length).toBeGreaterThan(0)
-
-    for (const value of permitNumberValues) {
-      const lower = value.toLowerCase()
-      const matchesAny = searchedList.some((s) => lower.includes(s))
-      if (!matchesAny) {
-        throw new Error(
-          `Result "${value}" does not match any of the searched ` +
-            `permit numbers: ${searchPermitPage.lastSearchedAsList.join(', ')}`
-        )
-      }
-    }
+    assertValuesMatchSearchTerms(
+      permitNumberValues,
+      searchPermitPage.lastSearchedAsList,
+      'permit numbers'
+    )
   }
 )
 
 Then(
   /^each result should display the following columns:$/,
   async (dataTable) => {
-    const expectedColumns = dataTable.hashes().map((row) => row.Column)
+    const expectedColumns = columnNamesFromTable(dataTable)
     const actualHeaders = await searchPermitPage.getResultsTableHeaders()
 
     for (const column of expectedColumns) {
@@ -98,19 +104,7 @@ Then(
     }
 
     const rows = await searchPermitPage.getResultsAsObjects()
-    expect(rows.length).toBeGreaterThan(0)
-
-    rows.forEach((row, rowIndex) => {
-      for (const column of expectedColumns) {
-        const value = (row[column] ?? '').toString().trim()
-        if (value === '') {
-          throw new Error(
-            `Row ${rowIndex + 1} is missing data in the "${column}" column. ` +
-              `Row contents: ${JSON.stringify(row)}`
-          )
-        }
-      }
-    })
+    assertRowsHaveColumns(rows, expectedColumns)
   }
 )
 
@@ -147,50 +141,15 @@ Then(
     const expectedRows = dataTable.hashes()
     const actualRows = await searchPermitPage.getResultsAsObjects()
 
-    expect(actualRows.length).toBe(expectedRows.length)
-
-    expectedRows.forEach((expected, i) => {
-      const actual = actualRows[i]
-      for (const [column, expectedValue] of Object.entries(expected)) {
-        const actualValue = (actual?.[column] ?? '').toString().trim()
-        if (actualValue !== expectedValue) {
-          throw new Error(
-            `Row ${i + 1}, column "${column}" mismatch.\n` +
-              `  Expected: "${expectedValue}"\n` +
-              `  Actual:   "${actualValue}"\n` +
-              `  Full row: ${JSON.stringify(actual)}`
-          )
-        }
-      }
-    })
+    assertRowsMatch(actualRows, expectedRows)
   }
 )
 
 Then(/^every result should have the following values:$/, async (dataTable) => {
   const expected = dataTable.hashes()[0]
-  if (!expected) {
-    throw new Error(
-      'Expected exactly one template row in the data table for ' +
-        '"every result should have the following values".'
-    )
-  }
-
   const actualRows = await searchPermitPage.getResultsAsObjects()
-  expect(actualRows.length).toBeGreaterThan(0)
 
-  actualRows.forEach((actual, i) => {
-    for (const [column, expectedValue] of Object.entries(expected)) {
-      const actualValue = (actual?.[column] ?? '').toString().trim()
-      if (actualValue !== expectedValue) {
-        throw new Error(
-          `Row ${i + 1}, column "${column}" mismatch.\n` +
-            `  Expected: "${expectedValue}"\n` +
-            `  Actual:   "${actualValue}"\n` +
-            `  Full row: ${JSON.stringify(actual)}`
-        )
-      }
-    }
-  })
+  assertEveryRowMatches(actualRows, expected)
 })
 
 Then('the search input field should be visible', async () => {
@@ -209,20 +168,6 @@ Then(/^the displayed results should match the expected permits$/, async () => {
   }
 
   const actual = await searchPermitPage.getResultsAsObjects()
-  expect(actual.length).toBe(expected.length)
 
-  expected.forEach((expectedRow, i) => {
-    const actualRow = actual[i]
-    for (const [column, expectedValue] of Object.entries(expectedRow)) {
-      const actualValue = (actualRow?.[column] ?? '').toString().trim()
-      if (actualValue !== expectedValue) {
-        throw new Error(
-          `Row ${i + 1}, column "${column}" mismatch.\n` +
-            `  Expected: "${expectedValue}"\n` +
-            `  Actual:   "${actualValue}"\n` +
-            `  Full row: ${JSON.stringify(actualRow)}`
-        )
-      }
-    }
-  })
+  assertRowsMatch(actual, expected)
 })

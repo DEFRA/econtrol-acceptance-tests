@@ -1,4 +1,4 @@
-import { $ } from '@wdio/globals'
+import { $, browser } from '@wdio/globals'
 import { Page } from './page.js'
 
 const TABLE_HEADER_ALIASES = {
@@ -16,29 +16,42 @@ class SearchPermitPage extends Page {
   }
 
   open() {
-    const start = process.env.WDIO_SEARCH_PERMIT_START_PATH ?? '/'
+    const start = process.env.URL ?? '/'
     return super.open(start)
   }
 
-  async openEmptySearch() {
-    const path =
-      process.env.WDIO_SEARCH_PERMIT_EMPTY_PATH ??
-      '/beta-28-05-26/single-search-results/search-results?empty=1'
+  async ensureReady({ email, password } = {}) {
+    await this.open()
 
-    return super.open(path)
+    await browser.waitUntil(
+      async () =>
+        (await this.isDisplayed(this.permitNumberInput)) ||
+        (await this.isDisplayed(this.loginMicrosoftLink)) ||
+        (await this.isDisplayed(this.passwordInput)),
+      {
+        timeout: 10000,
+        timeoutMsg:
+          'Expected search page, Microsoft login, or password screen to be visible.'
+      }
+    )
+
+    if (await this.isDisplayed(this.permitNumberInput)) {
+      return
+    }
+
+    if (await this.isDisplayed(this.loginMicrosoftLink)) {
+      await this.login(email, password)
+    } else if (await this.isDisplayed(this.passwordInput)) {
+      await this.enterPassword(password)
+      await this.clickContinue()
+    }
+
+    await this.permitNumberInput.waitForDisplayed({ timeout: 10000 })
   }
 
   // -------------------------
-  // Selectors
+  // selectors
   // -------------------------
-
-  get password() {
-    return $('#password')
-  }
-
-  get continue() {
-    return $("//button[@type='submit']")
-  }
 
   get permitNumberInput() {
     return $('#permitReferences')
@@ -103,21 +116,6 @@ class SearchPermitPage extends Page {
   // Actions
   // -------------------------
 
-  async enterPassword(password) {
-    const exists = await this.password.isExisting()
-    if (!exists) return
-
-    await this.password.setValue(password)
-  }
-
-  async clickContinue() {
-    const exists = await this.continue.isExisting()
-    if (!exists) return
-
-    await this.continue.waitForClickable()
-    await this.continue.click()
-  }
-
   async enterPermits(permitNumbers) {
     const list = (
       Array.isArray(permitNumbers) ? permitNumbers : [permitNumbers]
@@ -156,6 +154,14 @@ class SearchPermitPage extends Page {
   async clickChangeSearch() {
     await this.changeSearch.waitForClickable({ timeout: 10000 })
     await this.changeSearch.click()
+  }
+
+  async selectResultAction(permitNumber, actionText) {
+    const row = await this.findResultRowByPermitNumber(permitNumber)
+    const action = await row.$(`a=${actionText}`)
+
+    await action.waitForClickable({ timeout: 10000 })
+    await action.click()
   }
 
   // -------------------------
@@ -280,6 +286,24 @@ class SearchPermitPage extends Page {
     }
 
     return results
+  }
+
+  async findResultRowByPermitNumber(permitNumber) {
+    await this.resultsTable.waitForDisplayed({ timeout: 10000 })
+
+    const rows = await this.elementArrayToList(this.resultRows)
+
+    for (const row of rows) {
+      const text = await row.getText()
+
+      if (text.includes(permitNumber)) {
+        return row
+      }
+    }
+
+    throw new Error(
+      `Could not find a result row for permit number "${permitNumber}".`
+    )
   }
 
   // -------------------------
