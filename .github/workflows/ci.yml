@@ -11,11 +11,11 @@ on:
       test-env:
         description: Test environment
         required: false
-        default: qa
+        default: dev
         type: choice
         options:
-          - qa
           - dev
+          - qa
   push:
     branches:
       - main
@@ -25,16 +25,16 @@ permissions:
 
 env:
   HEADLESS: 'true'
-  TEST_ENV: ${{ inputs.test-env || secrets.TEST_ENV || 'qa' }}
-  URL: ${{ (inputs.test-env || secrets.TEST_ENV || 'qa') == 'dev' && secrets.DEV_URL || secrets.QA_URL }}
-  BASE_URL: ${{ (inputs.test-env || secrets.TEST_ENV || 'qa') == 'dev' && secrets.DEV_URL || secrets.QA_URL }}
+  TEST_ENV: ${{ inputs.test-env || secrets.TEST_ENV || 'dev' }}
+  URL: ${{ (inputs.test-env || secrets.TEST_ENV || 'dev') == 'dev' && secrets.DEV_URL || secrets.QA_URL }}
+  BASE_URL: ${{ (inputs.test-env || secrets.TEST_ENV || 'dev') == 'dev' && secrets.DEV_URL || secrets.QA_URL }}
   EMAIL: ${{ secrets.EMAIL }}
   PASSWORD: ${{ secrets.PASSWORD }}
   DEV_DATAVERSE_BASE_URL: ${{ secrets.DEV_DATAVERSE_BASE_URL }}
   DEV_DATAVERSE_CLIENT_ID: ${{ secrets.DEV_DATAVERSE_CLIENT_ID }}
   TEST_DATAVERSE_BASE_URL: ${{ secrets.QA_DATAVERSE_BASE_URL || secrets.TEST_DATAVERSE_BASE_URL }}
   TEST_DATAVERSE_CLIENT_ID: ${{ secrets.QA_DATAVERSE_CLIENT_ID || secrets.TEST_DATAVERSE_CLIENT_ID }}
-  API_BASE_URL: ${{ (inputs.test-env || secrets.TEST_ENV || 'qa') == 'dev' && secrets.DEV_DATAVERSE_BASE_URL || secrets.QA_DATAVERSE_BASE_URL || secrets.TEST_DATAVERSE_BASE_URL }}
+  API_BASE_URL: ${{ (inputs.test-env || secrets.TEST_ENV || 'dev') == 'dev' && secrets.DEV_DATAVERSE_BASE_URL || secrets.QA_DATAVERSE_BASE_URL || secrets.TEST_DATAVERSE_BASE_URL }}
   API_TOKEN_VERSION: ${{ secrets.API_TOKEN_VERSION }}
   API_TOKEN_GRANT_TYPE: ${{ secrets.API_TOKEN_GRANT_TYPE }}
   API_TOKEN_RESOURCE: ${{ secrets.API_TOKEN_RESOURCE }}
