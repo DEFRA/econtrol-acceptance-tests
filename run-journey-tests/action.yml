@@ -43,6 +43,19 @@ runs:
           exit 1
         fi
 
+        node -e "
+          const dns = require('node:dns')
+          const target = process.env.URL || process.env.BASE_URL
+          const host = new URL(target).hostname
+
+          dns.lookup(host, (error) => {
+            if (error) {
+              console.error(\`Could not resolve application host: \${host}. Check the URL secret, or run these tests on a runner that can access the environment network.\`)
+              process.exit(1)
+            }
+          })
+        "
+
     - name: Validate API environment
       if: contains(inputs.test-tags, '@api')
       shell: bash
