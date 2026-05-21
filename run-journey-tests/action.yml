@@ -5,51 +5,76 @@ inputs:
   test-tags:
     description: Cucumber tag expression to run.
     required: false
-    type: string
-  example-node-frontend:
-    required: false
-    type: string
+    default: '@smoke'
 
 runs:
-  using: 'composite'
+  using: composite
+
   steps:
-    - uses: actions/checkout@v4
-      with:
-        repository: DEFRA/econtrol-acceptance-tests
-
-    - name: Docker Login
-      uses: DEFRA/cdp-build-action/docker-login@main
-
-    - uses: actions/setup-node@v4
+    - name: Setup Node
+      uses: actions/setup-node@v4
       with:
         node-version-file: .nvmrc
         cache: npm
-    - name: Setup the tests
-      run: npm i
+
+    - name: Install dependencies
       shell: bash
-    - name: Start docker compose
+      run: npm ci
+
+    - name: Clean previous reports
+      shell: bash
+      run: npm run clean
+
+    - name: Validate API environment
+      if: contains(inputs.test-tags, '@api')
       shell: bash
       run: |
-        CDP_EXAMPLE_NODE_FRONTEND=${{inputs.example-node-frontend}} \
-        CDP_EXAMPLE_NODE_BACKEND=${{inputs.example-node-backend}} \
-        docker compose up --wait-timeout 300 -d --quiet-pull
-    - name: Run the tests
+        if [ -z "$API_BASE_URL" ]; then
+          echo "API_BASE_URL is not set. Add QA_DATAVERSE_BASE_URL or TEST_DATAVERSE_BASE_URL for QA runs, and DEV_DATAVERSE_BASE_URL for dev runs."
+          exit 1
+        fi
+
+        if [ -z "$API_BEARER_TOKEN" ]; then
+          echo "API_BEARER_TOKEN is not set. Add a fresh manually generated token as a GitHub secret."
+          exit 1
+        fi
+
+        if [ -z "$API_SEARCH_PERMIT_NUMBER" ]; then
+          echo "API_SEARCH_PERMIT_NUMBER is not set. Add it as a GitHub Actions variable."
+          exit 1
+        fi
+
+        if [ -z "$ENDORSEMENT_PERMIT_ID" ]; then
+          echo "ENDORSEMENT_PERMIT_ID is not set. Add it as a GitHub Actions variable."
+          exit 1
+        fi
+
+        if [ -z "$ENDORSEMENT_PERMIT_NUMBER" ]; then
+          echo "ENDORSEMENT_PERMIT_NUMBER is not set. Add it as a GitHub Actions variable."
+          exit 1
+        fi
+
+    - name: Run tests
       shell: bash
-      run: |
-        npm run test:smoke
-        npm run report
-    - name: debug
+      run: npx wdio run wdio.conf.js --cucumberOpts.tags="${{ inputs.test-tags }}"
+
+    - name: Generate Allure report
       if: always()
       shell: bash
-    - name: Upload allure report
+      run: npm run report
+
+    - name: Upload Allure report
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: allure-report
         path: ./allure-report
-    - name: Upload docker compose logs
+        if-no-files-found: warn
+
+    - name: Upload Allure results
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: docker-compose-logs
-        path: ./logs.txt
+        name: allure-results
+        path: ./allure-results
+        if-no-files-found: warn
