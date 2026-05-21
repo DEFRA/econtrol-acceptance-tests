@@ -142,11 +142,6 @@ API_BEARER_TOKEN=your-token
 API_TOKEN_VERSION=1
 API_TOKEN_GRANT_TYPE=implicit
 API_TOKEN_RESOURCE=https://your-dataverse-org.crm11.dynamics.com/
-
-SEARCH_PERMIT_API_PATH=cites_SearchPermitByNumber
-ENDORSE_PERMIT_API_PATH=cites_EndorsePermit
-RETRIEVE_PERMIT_API_PATH=cites_SearchPermitByNumber
-PERMIT_HISTORY_API_PATH=
 ```
 
 Do not commit real tokens, passwords, or environment-specific secrets.
@@ -157,7 +152,8 @@ Set these repository or environment secrets in GitHub before running the workflo
 
 Required for UI and accessibility tests:
 
-- `URL`: eControl application URL.
+- `QA_URL`: QA/test eControl application URL.
+- `DEV_URL`: dev eControl application URL, required when running with `TEST_ENV=dev`.
 - `EMAIL`: login email for the authorised test user.
 - `PASSWORD`: login password for the authorised test user.
 - `TEST_ENV`: target environment, usually `qa` or `dev`. The workflow defaults to `qa` if this is not set.
@@ -178,13 +174,6 @@ Authentication secrets. Use one of these approaches:
   - `API_TOKEN_RESOURCE`
   - `API_CLIENT_ID`
   - `API_CLIENT_SECRET`
-
-Optional API route override secrets:
-
-- `SEARCH_PERMIT_API_PATH`
-- `ENDORSE_PERMIT_API_PATH`
-- `RETRIEVE_PERMIT_API_PATH`
-- `PERMIT_HISTORY_API_PATH`
 
 The permit numbers and expected API payload values are kept directly in the feature files, so GitHub variables such as `VALID_IMPORT_PERMIT_NUMBER` or `ENDORSEMENT_PERMIT_ID` are no longer required.
 
