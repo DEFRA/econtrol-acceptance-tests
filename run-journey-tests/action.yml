@@ -25,6 +25,24 @@ runs:
       shell: bash
       run: npm run clean
 
+    - name: Validate application environment
+      shell: bash
+      run: |
+        if [ -z "$URL" ] && [ -z "$BASE_URL" ]; then
+          echo "URL/BASE_URL is not set. Add DEV_URL as a GitHub secret for dev runs, or QA_URL for QA runs."
+          exit 1
+        fi
+
+        if [ -z "$EMAIL" ]; then
+          echo "EMAIL is not set. Add it as a GitHub secret."
+          exit 1
+        fi
+
+        if [ -z "$PASSWORD" ]; then
+          echo "PASSWORD is not set. Add it as a GitHub secret."
+          exit 1
+        fi
+
     - name: Validate API environment
       if: contains(inputs.test-tags, '@api')
       shell: bash

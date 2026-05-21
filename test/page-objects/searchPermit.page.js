@@ -16,7 +16,14 @@ class SearchPermitPage extends Page {
   }
 
   open() {
-    const start = process.env.URL ?? '/'
+    const start = process.env.URL || process.env.BASE_URL
+
+    if (!start) {
+      throw new Error(
+        'URL/BASE_URL is not configured. Set URL or BASE_URL before opening the Search Permit page.'
+      )
+    }
+
     return super.open(start)
   }
 
