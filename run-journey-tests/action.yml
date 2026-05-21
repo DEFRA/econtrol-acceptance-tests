@@ -1,57 +1,51 @@
-name: Run Journey Tests on GitHub
-description: Run the journey tests in GitHub actions using the latest images from dockerhub. This is intended to be used as part of a workflow that builds and pushes the images, e.g. publish.yml, but can be used in any workflow.
+name: Run Journey Tests
+description: Install dependencies, run WebdriverIO journey tests, and upload Allure reports.
 
 inputs:
-  example-node-backend:
+  test-tags:
+    description: Cucumber tag expression to run.
     required: false
-    type: string
-  example-node-frontend:
-    required: false
-    type: string
+    default: '@smoke'
 
 runs:
-  using: 'composite'
+  using: composite
+
   steps:
-    - uses: actions/checkout@v4
-      with:
-        repository: DEFRA/econtrol-acceptance-tests
-
-    - name: Docker Login
-      uses: DEFRA/cdp-build-action/docker-login@main
-
-    - uses: actions/setup-node@v4
+    - name: Setup Node
+      uses: actions/setup-node@v4
       with:
         node-version-file: .nvmrc
         cache: npm
-    - name: Setup the tests
-      run: npm i
+
+    - name: Install dependencies
       shell: bash
-    - name: Start docker compose
+      run: npm ci
+
+    - name: Clean previous reports
       shell: bash
-      run: |
-        CDP_EXAMPLE_NODE_FRONTEND=${{inputs.example-node-frontend}} \
-        CDP_EXAMPLE_NODE_BACKEND=${{inputs.example-node-backend}} \
-        docker compose up --wait-timeout 300 -d --quiet-pull
-    - name: Run the tests
+      run: npm run clean
+
+    - name: Run tests
       shell: bash
-      run: |
-        npm run test:smoke
-        npm run report
-    - name: debug
+      run: npx wdio run wdio.conf.js --cucumberOpts.tagExpression="${{ inputs.test-tags }}"
+
+    - name: Generate Allure report
       if: always()
-      run: |
-        docker compose logs > logs.txt
-        docker ps
       shell: bash
-    - name: Upload allure report
+      run: npm run report
+
+    - name: Upload Allure report
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: allure-report
         path: ./allure-report
-    - name: Upload docker compose logs
+        if-no-files-found: warn
+
+    - name: Upload Allure results
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: docker-compose-logs
-        path: ./logs.txt
+        name: allure-results
+        path: ./allure-results
+        if-no-files-found: warn
