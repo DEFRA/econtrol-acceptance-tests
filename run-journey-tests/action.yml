@@ -77,8 +77,18 @@ runs:
             exit 1
           fi
 
-          if [ -z "$API_CLIENT_ID" ] || [ -z "$API_CLIENT_SECRET" ]; then
-            echo "Set API_BEARER_TOKEN, or set API_TOKEN_GRANT_TYPE=client_credentials with API_CLIENT_ID and API_CLIENT_SECRET for automatic token generation."
+          EFFECTIVE_API_CLIENT_ID="$API_CLIENT_ID"
+
+          if [ -z "$EFFECTIVE_API_CLIENT_ID" ]; then
+            if [ "$TEST_ENV" = "dev" ]; then
+              EFFECTIVE_API_CLIENT_ID="$DEV_DATAVERSE_CLIENT_ID"
+            else
+              EFFECTIVE_API_CLIENT_ID="$TEST_DATAVERSE_CLIENT_ID"
+            fi
+          fi
+
+          if [ -z "$EFFECTIVE_API_CLIENT_ID" ] || [ -z "$API_CLIENT_SECRET" ]; then
+            echo "Set API_BEARER_TOKEN, or set API_TOKEN_GRANT_TYPE=client_credentials with API_CLIENT_SECRET and API_CLIENT_ID/DEV_DATAVERSE_CLIENT_ID/TEST_DATAVERSE_CLIENT_ID for automatic token generation."
             exit 1
           fi
         fi
