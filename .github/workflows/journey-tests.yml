@@ -57,7 +57,7 @@ env:
 jobs:
   journey-tests:
     name: Run ${{ inputs.test-tags || '@smoke' }} tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
 
     steps:
       - name: Checkout code

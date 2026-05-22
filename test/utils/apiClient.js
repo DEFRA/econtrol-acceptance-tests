@@ -12,9 +12,11 @@ const formHeaders = {
   'Content-Type': 'application/x-www-form-urlencoded'
 }
 
+const asBearerToken = (value) => `Bearer ${value.replace(/^Bearer\s+/i, '')}`
+
 const envHeaderMappings = [
-  ['API_BEARER_TOKEN', 'Authorization', (value) => `Bearer ${value}`],
-  ['API_TOKEN', 'Authorization', (value) => `Bearer ${value}`],
+  ['API_BEARER_TOKEN', 'Authorization', asBearerToken],
+  ['API_TOKEN', 'Authorization', asBearerToken],
   ['OCP_APIM_SUBSCRIPTION_KEY', 'Ocp-Apim-Subscription-Key'],
   ['API_KEY', 'x-api-key']
 ]
@@ -228,8 +230,13 @@ export const createDefaultHeaders = () => ({
 
 export const createAuthorizedHeaders = async () => ({
   ...createDefaultHeaders(),
-  Authorization: `Bearer ${await generateApiToken()}`
+  Authorization: asBearerToken(await generateApiToken())
 })
+
+const isMicrosoftSignInPage = (text) =>
+  text.includes('<title>Sign in to your account</title>') ||
+  text.includes('login.microsoftonline.com') ||
+  text.includes('ConvergedSignIn')
 
 export const buildApiUrl = (path, query = {}) => {
   const resolvedPath = resolveApiPath(path)
@@ -256,10 +263,19 @@ export const sendApiRequest = async ({
   const url = buildApiUrl(path, query)
   const response = await fetch(url, {
     method,
+    redirect: 'manual',
     headers,
     body: body === undefined ? undefined : JSON.stringify(body)
   })
   const text = await response.text()
+
+  if (isMicrosoftSignInPage(text)) {
+    throw new Error(
+      'API returned the Microsoft sign-in page instead of JSON. ' +
+        'Check API_BEARER_TOKEN is a fresh access token for the Dataverse API, and that API_BASE_URL points to the Dataverse API host.'
+    )
+  }
+
   let data
 
   try {
