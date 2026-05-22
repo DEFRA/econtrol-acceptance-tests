@@ -35,8 +35,8 @@ env:
   TEST_DATAVERSE_BASE_URL: ${{ secrets.QA_DATAVERSE_BASE_URL || secrets.TEST_DATAVERSE_BASE_URL }}
   TEST_DATAVERSE_CLIENT_ID: ${{ secrets.QA_DATAVERSE_CLIENT_ID || secrets.TEST_DATAVERSE_CLIENT_ID }}
   API_BASE_URL: ${{ (inputs.test-env || secrets.TEST_ENV || 'dev') == 'dev' && secrets.DEV_DATAVERSE_BASE_URL || secrets.QA_DATAVERSE_BASE_URL || secrets.TEST_DATAVERSE_BASE_URL }}
-  API_TOKEN_VERSION: ${{ secrets.API_TOKEN_VERSION }}
-  API_TOKEN_GRANT_TYPE: ${{ secrets.API_TOKEN_GRANT_TYPE }}
+  API_TOKEN_VERSION: ${{ secrets.API_TOKEN_VERSION || '1' }}
+  API_TOKEN_GRANT_TYPE: ${{ secrets.API_TOKEN_GRANT_TYPE || 'client_credentials' }}
   API_TOKEN_RESOURCE: ${{ secrets.API_TOKEN_RESOURCE }}
   API_CLIENT_ID: ${{ secrets.API_CLIENT_ID }}
   API_CLIENT_SECRET: ${{ secrets.API_CLIENT_SECRET }}

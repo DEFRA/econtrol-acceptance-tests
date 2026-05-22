@@ -21,6 +21,15 @@ const envHeaderMappings = [
   ['API_KEY', 'x-api-key']
 ]
 
+const envValue = (...names) => {
+  for (const name of names) {
+    const value = process.env[name]
+    if (value) return value
+  }
+
+  return undefined
+}
+
 const getDataverseTokenScope = () => {
   if (!apiRouteConfig.baseUrl) return undefined
 
@@ -33,16 +42,16 @@ const getDataverseTokenResource = () => {
   return `${new URL(apiRouteConfig.baseUrl).origin}/`
 }
 
-const tokenVersion =
-  process.env.API_TOKEN_VERSION ?? process.env.TOKEN_VERSION ?? '1'
+const tokenVersion = envValue('API_TOKEN_VERSION', 'TOKEN_VERSION') ?? '1'
 
 const getTokenUrl = () => {
-  if (process.env.API_TOKEN_URL ?? process.env.TOKEN_URL) {
-    return process.env.API_TOKEN_URL ?? process.env.TOKEN_URL
+  const configuredTokenUrl = envValue('API_TOKEN_URL', 'TOKEN_URL')
+
+  if (configuredTokenUrl) {
+    return configuredTokenUrl
   }
 
-  const authority =
-    process.env.API_AUTHORITY ?? process.env.API_TENANT_ID ?? 'common'
+  const authority = envValue('API_AUTHORITY', 'API_TENANT_ID') ?? 'common'
   const tokenPath = tokenVersion === '1' ? 'token' : 'v2.0/token'
 
   return `https://login.microsoftonline.com/${authority}/oauth2/${tokenPath}`
@@ -50,26 +59,17 @@ const getTokenUrl = () => {
 
 const tokenConfig = {
   url: getTokenUrl(),
-  clientId:
-    process.env.API_CLIENT_ID ??
-    process.env.CLIENT_ID ??
-    apiRouteConfig.clientId,
-  clientSecret: process.env.API_CLIENT_SECRET ?? process.env.CLIENT_SECRET,
+  clientId: envValue('API_CLIENT_ID', 'CLIENT_ID') ?? apiRouteConfig.clientId,
+  clientSecret: envValue('API_CLIENT_SECRET', 'CLIENT_SECRET'),
   scope:
-    process.env.API_TOKEN_SCOPE ??
-    process.env.TOKEN_SCOPE ??
+    envValue('API_TOKEN_SCOPE', 'TOKEN_SCOPE') ??
     (tokenVersion === '1' ? undefined : getDataverseTokenScope()),
   resource:
-    process.env.API_TOKEN_RESOURCE ??
-    process.env.TOKEN_RESOURCE ??
+    envValue('API_TOKEN_RESOURCE', 'TOKEN_RESOURCE') ??
     (tokenVersion === '1' ? getDataverseTokenResource() : undefined),
-  grantType:
-    process.env.API_TOKEN_GRANT_TYPE ??
-    process.env.TOKEN_GRANT_TYPE ??
-    'password',
-  username:
-    process.env.API_USERNAME ?? process.env.USERNAME ?? process.env.EMAIL,
-  password: process.env.API_PASSWORD ?? process.env.PASSWORD
+  grantType: envValue('API_TOKEN_GRANT_TYPE', 'TOKEN_GRANT_TYPE') ?? 'password',
+  username: envValue('API_USERNAME', 'USERNAME', 'EMAIL'),
+  password: envValue('API_PASSWORD', 'PASSWORD')
 }
 
 let cachedAccessToken
@@ -110,8 +110,7 @@ const getApiBaseUrl = () =>
         : undefined)
   )
 
-const getStaticAccessToken = () =>
-  process.env.API_BEARER_TOKEN ?? process.env.API_TOKEN
+const getStaticAccessToken = () => envValue('API_BEARER_TOKEN', 'API_TOKEN')
 
 const getAuthHeaders = () => {
   const headers = {}
@@ -177,6 +176,14 @@ export const generateApiToken = async ({ forceRefresh = false } = {}) => {
     throw new Error(
       'API_TOKEN_GRANT_TYPE=implicit requires a token generated in Postman/Insomnia. Paste the access token into API_BEARER_TOKEN in your local .env file before running API tests.'
     )
+  }
+
+  if (tokenConfig.grantType === 'client_credentials') {
+    if (!tokenConfig.clientId || !tokenConfig.clientSecret) {
+      throw new Error(
+        'API_TOKEN_GRANT_TYPE=client_credentials requires API_CLIENT_ID and API_CLIENT_SECRET for automatic token generation.'
+      )
+    }
   }
 
   const response = await fetch(tokenConfig.url, {

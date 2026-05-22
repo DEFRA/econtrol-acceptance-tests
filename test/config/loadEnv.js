@@ -13,7 +13,8 @@ export const loadEnv = (defaultEnv = 'dev') => {
   process.env.TEST_ENV = env
 
   dotenv.config({
-    path: path.join(projectRoot, `.env.${env}`)
+    path: path.join(projectRoot, `.env.${env}`),
+    override: process.env.GITHUB_ACTIONS !== 'true'
   })
 
   return env

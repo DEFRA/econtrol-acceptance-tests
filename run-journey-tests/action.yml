@@ -66,9 +66,21 @@ runs:
           exit 1
         fi
 
-        if [ -z "$API_BEARER_TOKEN" ]; then
-          echo "API_BEARER_TOKEN is not set. Add a fresh manually generated token as a GitHub secret."
-          exit 1
+        if [ -z "$API_BEARER_TOKEN" ] && [ -z "$API_TOKEN" ]; then
+          if [ "$API_TOKEN_GRANT_TYPE" = "implicit" ]; then
+            echo "API_TOKEN_GRANT_TYPE=implicit requires API_BEARER_TOKEN. Use client_credentials with API_CLIENT_ID and API_CLIENT_SECRET to generate tokens automatically."
+            exit 1
+          fi
+
+          if [ "$API_TOKEN_GRANT_TYPE" != "client_credentials" ]; then
+            echo "Set API_TOKEN_GRANT_TYPE=client_credentials to generate API tokens automatically, or set API_BEARER_TOKEN for a manual token."
+            exit 1
+          fi
+
+          if [ -z "$API_CLIENT_ID" ] || [ -z "$API_CLIENT_SECRET" ]; then
+            echo "Set API_BEARER_TOKEN, or set API_TOKEN_GRANT_TYPE=client_credentials with API_CLIENT_ID and API_CLIENT_SECRET for automatic token generation."
+            exit 1
+          fi
         fi
 
         if [ -z "$API_SEARCH_PERMIT_NUMBER" ]; then

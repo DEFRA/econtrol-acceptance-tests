@@ -138,10 +138,14 @@ DEV_DATAVERSE_CLIENT_ID=your-dev-client-id
 TEST_DATAVERSE_BASE_URL=https://your-test-dataverse-org.api.crm11.dynamics.com
 TEST_DATAVERSE_CLIENT_ID=your-test-client-id
 
-API_BEARER_TOKEN=your-token
 API_TOKEN_VERSION=1
-API_TOKEN_GRANT_TYPE=implicit
+API_TOKEN_GRANT_TYPE=client_credentials
 API_TOKEN_RESOURCE=https://your-dataverse-org.crm11.dynamics.com/
+API_CLIENT_ID=your-api-client-id
+API_CLIENT_SECRET=your-api-client-secret
+
+# Optional: paste a manually generated token instead of generating one.
+API_BEARER_TOKEN=
 
 SEARCH_PERMIT_API_PATH=cites_SearchPermitByNumber
 ENDORSE_PERMIT_API_PATH=cites_EndorsePermit
@@ -171,13 +175,14 @@ Required for API tests:
 
 Authentication secrets. Use one of these approaches:
 
-- `API_BEARER_TOKEN`: simplest option, paste a valid bearer token generated outside the test run.
-- Or token generation secrets:
-  - `API_TOKEN_VERSION`
-  - `API_TOKEN_GRANT_TYPE`
-  - `API_TOKEN_RESOURCE`
-  - `API_CLIENT_ID`
-  - `API_CLIENT_SECRET`
+- Automatic token generation:
+  - `API_TOKEN_VERSION`: usually `1` for Dataverse resource tokens.
+  - `API_TOKEN_GRANT_TYPE`: set to `client_credentials`.
+  - `API_TOKEN_RESOURCE`: Dataverse resource URL, for example `https://your-org.crm11.dynamics.com/`.
+  - `API_CLIENT_ID`: app registration/client ID.
+  - `API_CLIENT_SECRET`: app registration/client secret.
+- Manual token fallback:
+  - `API_BEARER_TOKEN`: paste a valid bearer token generated outside the test run.
 
 Optional API route override secrets:
 
@@ -186,7 +191,13 @@ Optional API route override secrets:
 - `RETRIEVE_PERMIT_API_PATH`
 - `PERMIT_HISTORY_API_PATH`
 
-The permit numbers and expected API payload values are kept directly in the feature files, so GitHub variables such as `VALID_IMPORT_PERMIT_NUMBER` or `ENDORSEMENT_PERMIT_ID` are no longer required.
+Required API test data variables:
+
+- `API_SEARCH_PERMIT_NUMBER`
+- `ENDORSEMENT_PERMIT_ID`
+- `ENDORSEMENT_PERMIT_NUMBER`
+
+The feature files read these values from environment variables so the permit records can differ between environments.
 
 ## Running Tests
 
